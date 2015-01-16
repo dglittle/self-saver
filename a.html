@@ -39,7 +39,7 @@ $(function () {
 				type : 'GET',
 				url : 'https://api.github.com/repos/dglittle/self-saver/contents/a.html',
 				success : function (x) {
-					var c = Base64.decode(x.content)
+					var c = Base64.decode(x.content, true)
 					$('body').append($('<div/>').text(c))
 				}
 			})
