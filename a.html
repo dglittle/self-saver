@@ -27,6 +27,10 @@ th, td {
 <script src="//github-access-token-getter.herokuapp.com/index.js"></script>
 <script>
 
+function decode_utf8(s) {
+  return decodeURIComponent(escape(s));
+}
+
 $(function () {
 	$(document).ajaxError(function () {
 		alert('oh no, AJAX badness happened!')
@@ -39,7 +43,8 @@ $(function () {
 				type : 'GET',
 				url : 'https://api.github.com/repos/dglittle/self-saver/contents/a.html',
 				success : function (x) {
-					var c = Base64.decode(x.content, true)
+
+					var c = decode_utf8(Base64.decode(x.content))
 					$('body').append($('<div/>').text(c))
 				}
 			})
