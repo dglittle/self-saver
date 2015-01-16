@@ -27,14 +27,15 @@ th, td {
 <script src="//github-access-token-getter.herokuapp.com/index.js"></script>
 <script>
 
-function decode_utf8(s) {
-  return decodeURIComponent(escape(s));
-}
+var the_text = /*AAA*/'hi there'/*BBB*/
 
 $(function () {
 	$(document).ajaxError(function () {
 		alert('oh no, AJAX badness happened!')
 	})
+
+	var t = $('<textarea/>').val(the_text)
+	$('body').append(t)
 
 	$('body').append($('<button/>').text('test').click(function () {
 		get_github_access_token('repo', function (access_token) {
@@ -43,13 +44,26 @@ $(function () {
 				type : 'GET',
 				url : 'https://api.github.com/repos/dglittle/self-saver/contents/a.html',
 				success : function (x) {
+					var c = Base64.decode(x.content.replace(/\s/g, ''))
 
-					var c = decode_utf8(Base64.decode(x.content))
-					$('body').append($('<div/>').text(c))
+					c = c.replace(/\/\*AAA\*\/.*?\/\*BBB\*\//, '/*AAA*/' + _.json(t.val()) + '/*BBB*/')
+					console.log('c = ' + c)
+
+					$.ajax({
+						type : 'PUT',
+						url : 'https://api.github.com/repos/dglittle/self-saver/contents/a.html?access_token=' + access_token,
+						data : _.json({
+							path : '/a.html',
+							message : 'my commit message',
+							content : Base64.encode(c),
+							sha : x.sha
+						}),
+						success : function (x) {
+							alert('x = ' + _.json(x))
+						}
+					})
 				}
 			})
-
-//			alert('access_token = ' + access_token)
 		})
 	}))
 })
