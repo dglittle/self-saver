@@ -33,7 +33,16 @@ $(function () {
 
 	$('body').append($('<button/>').text('test').click(function () {
 		get_github_access_token('repo', function (access_token) {
-			alert('access_token = ' + access_token)
+
+			$.ajax({
+				type : 'GET',
+				url : 'https://api.github.com/repos/dglittle/self-saver/contents/a.html',
+				success : function (x) {
+					$('body').append($('<div/>').text(_.json(x)))
+				}
+			})
+
+//			alert('access_token = ' + access_token)
 		})
 	}))
 })
