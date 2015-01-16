@@ -1,0 +1,44 @@
+<html>
+<head>
+<meta charset='utf-8'>
+<title>untitled</title>
+<meta name="viewport" content="width=device-width, user-scalable=no">
+<style>
+
+body {
+    margin: 0px;
+}
+table {
+    border-collapse: collapse;
+}
+th, td {
+    padding: 0px;
+}
+
+</style>
+</head>
+<body>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="http://dglittle.github.io/gl519/index.js"></script>
+<script src="http://dglittle.github.io/gl519/tab.js"></script>
+<script src="utils.js"></script>
+
+<script src="//github-access-token-getter.herokuapp.com/index.js"></script>
+<script>
+
+$(function () {
+	$(document).ajaxError(function () {
+		alert('oh no, AJAX badness happened!')
+	})
+
+	$('body').append($('<button/>').text('test').click(function () {
+		get_github_access_token('repo', function (access_token) {
+			alert('access_token = ' + access_token)
+		})
+	}))
+})
+
+</script>
+
+</body>
+</html>
