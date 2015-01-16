@@ -21,6 +21,7 @@ th, td {
 <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 <script src="//dglittle.github.io/gl519/index.js"></script>
 <script src="//dglittle.github.io/gl519/tab.js"></script>
+<script src="//dglittle.github.io/gl519/aes.js"></script>
 <script src="utils.js"></script>
 
 <script src="//github-access-token-getter.herokuapp.com/index.js"></script>
@@ -38,7 +39,8 @@ $(function () {
 				type : 'GET',
 				url : 'https://api.github.com/repos/dglittle/self-saver/contents/a.html',
 				success : function (x) {
-					$('body').append($('<div/>').text(_.json(x)))
+					var c = Base64.decode(x.content)
+					$('body').append($('<div/>').text(c))
 				}
 			})
 
