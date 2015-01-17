@@ -27,27 +27,21 @@ th, td {
 <script src="//github-access-token-getter.herokuapp.com/index.js"></script>
 <script>
 
-var the_text = /*AAA*/'hi there'/*BBB*/
-
 $(function () {
 	$(document).ajaxError(function () {
 		alert('oh no, AJAX badness happened!')
 	})
 
-	var t = $('<textarea/>').val(the_text)
-	$('body').append(t)
-
-	$('body').append($('<button/>').text('test').click(function () {
+	var saveButton = $('<button/>').text('save (ctrl-s)').click(function () {
 		get_github_access_token('repo', function (access_token) {
-
 			$.ajax({
 				type : 'GET',
 				url : 'https://api.github.com/repos/dglittle/self-saver/contents/a.html',
 				success : function (x) {
 					var c = Base64.decode(x.content.replace(/\s/g, ''))
 
-					c = c.replace(/\/\*AAA\*\/.*?\/\*BBB\*\//, '/*AAA*/' + _.json(t.val()) + '/*BBB*/')
-					console.log('c = ' + c)
+					var i = c.indexOf('// ' + 'SAVE HERE')
+					c = c.slice(0, i) + '// ' + 'SAVE HERE' + '\ndb = ' + _.json(db) + '\n</' + 'script></body></html>'
 
 					$.ajax({
 						type : 'PUT',
@@ -65,10 +59,39 @@ $(function () {
 				}
 			})
 		})
-	}))
+
+	})
+	var reloadButton = $('<button/>').text('reload (ctrl-enter)').click(function () {
+		bottomRight.empty().append($('<iframe style="width:100%;height:100%"/>').attr('src', 'data:text/html;base64,' + Base64.encode(input.val())))
+
+	})
+	var input = $('<textarea style="width:100%;height:100%"/>').val(db.input)
+
+	var topLeft = $('<div/>').append(saveButton)
+	var topRight = $('<div/>').append(reloadButton)
+	var bottomLeft = $('<div style="width:100%;height:100%"/>').append(input)
+	var bottomRight = $('<div style="width:100%;height:100%"/>')
+
+	$('body').append(_.splitVert(2, 1, _.splitHorz(.5, .5, topLeft, topRight), _.splitHorz(.5, .5, bottomLeft, bottomRight)))
+
+	$('body').keydown(function (e) {
+		if (e.metaKey) {
+			if (e.keyCode == 83) {
+				// s
+				e.preventDefault()
+				saveButton.click()
+			}
+			if (e.keyCode == 82 || e.keyCode == 13) {
+				// r or enter
+				e.preventDefault()
+				reloadButton.click()
+			}
+		}
+	})
+
+	reloadButton.click()
 })
 
-</script>
-
-</body>
-</html>
+// SAVE HERE
+var db = {input:"hi there"}
+</script></body></html>
