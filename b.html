@@ -1,0 +1,135 @@
+<html>
+<head>
+<meta charset='utf-8'>
+<title>untitled</title>
+<meta name="viewport" content="width=device-width, user-scalable=no">
+<style>
+
+body {
+    margin: 0px;
+}
+table {
+    border-collapse: collapse;
+}
+th, td {
+    padding: 0px;
+}
+
+</style>
+</head>
+<body>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="//dglittle.github.io/gl519/index.js"></script>
+<script src="//dglittle.github.io/gl519/tab.js"></script>
+<script src="//dglittle.github.io/gl519/aes.js"></script>
+<script src="utils.js"></script>
+
+<script src="//github-access-token-getter.herokuapp.com/index.js"></script>
+<script>
+
+var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script>\n\n$(function () {\n    function makeHelloButton() {\n        $('body').append($('<button/>').text('hello again!').click(function () {\n            makeHelloButton()\n        }))\n    }\n    makeHelloButton()\n})\n\n<"+"/script>"
+
+$(function () {
+    $(document).ajaxError(function () {
+        alert('oh no, AJAX badness happened!')
+    })
+
+    $.get('https://api.github.com/repos/dglittle/self-saver/contents/a.html', function (x) {
+        outterSha = x.sha
+        outterText = Base64.decode(x.content.replace(/\s/g, ''))
+        outterText = outterText.replace(/^var inputText = ".*?"$/m, 'var inputText = \"REPLACE WITH INPUT TEXT\"')
+        main()
+    })
+})
+
+function main() {
+    access_token = null
+    function getAccessToken(cb) {
+        if (access_token) cb(access_token)
+        else get_github_access_token('repo', function (x) { access_token = x; cb(x) })
+    }
+        
+    function save() {
+        getAccessToken(function (access_token) {
+            $.ajax({
+                type : 'PUT',
+                url : 'https://api.github.com/repos/dglittle/self-saver/contents/a.html?access_token=' + access_token,
+                data : _.json({
+                    path : '/a.html',
+                    message : 'my commit message',
+                    content : Base64.encode(outter.val().replace(/\"REPLACE WITH INPUT TEXT\"/, _.json(input.val()).replace(/<\/script>/g, '<"+"/script>'))),
+                    sha : outterSha
+                }),
+                success : function (x) {
+                    alert('saved')
+                    outterSha = x.content.sha
+                }
+            })
+        })
+    }
+
+    var input = $('<textarea style="width:100%;height:100%"/>').val(inputText)
+    var outter = $('<textarea style="width:100%;height:100%"/>').val(outterText)
+
+    var saveButton = $('<button/>').text('save (ctrl-s)').click(save)
+    var editInputButton = $('<button/>').text('normal edit').click(function () {
+        bottomLeft.children().detach()
+        bottomLeft.append(input)
+    })
+    var editOutterButton = $('<button/>').text('edit self').click(function () {
+        bottomLeft.children().detach()
+        bottomLeft.append(outter)
+    })
+    var forkButton = $('<button/>').text('save as..').click(function () {
+        var filename = prompt('new file name:')
+        if (filename) {
+            getAccessToken(function (access_token) {
+                $.ajax({
+                    type : 'PUT',
+                    url : 'https://api.github.com/repos/dglittle/self-saver/contents/' + filename + '?access_token=' + access_token,
+                    data : _.json({
+                        path : '/' + filename,
+                        message : 'my commit message',
+                        content : Base64.encode(outter.val().replace(/\"REPLACE WITH INPUT TEXT\"/, _.json(input.val()).replace(/<\/script>/g, '<"+"/script>')))
+                    }),
+                    success : function (x) {
+                        window.location.href = 'http://dglittle.github.io/self-saver/' + filename
+                    }
+                })
+            })
+        }
+    })
+
+    var reloadButton = $('<button/>').text('reload (ctrl-enter)').click(function () {
+        bottomRight.empty().append($('<iframe style="width:100%;height:100%"/>').attr('src', 'data:text/html;base64,' + Base64.encode(input.val())))
+
+    })
+
+    var topLeft = $('<div/>').append(saveButton).append(editInputButton).append(editOutterButton).append(forkButton)
+    var topRight = $('<div/>').append(reloadButton)
+    var bottomLeft = $('<div style="width:100%;height:100%"/>').append(input)
+    var bottomRight = $('<div style="width:100%;height:100%"/>')
+
+    $('body').append(_.splitVert(2, 1, _.splitHorz(.5, .5, topLeft, topRight), _.splitHorz(.5, .5, bottomLeft, bottomRight)))
+
+    $('body').keydown(function (e) {
+        if (e.metaKey) {
+            if (e.keyCode == 83) {
+                // s
+                e.preventDefault()
+                saveButton.click()
+            }
+            if (e.keyCode == 82 || e.keyCode == 13) {
+                // r or enter
+                e.preventDefault()
+                reloadButton.click()
+            }
+        }
+    })
+
+    reloadButton.click()
+}
+
+</script>
+</body>
+</html>
