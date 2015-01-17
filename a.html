@@ -33,6 +33,7 @@ $(function () {
 	})
 
 	var saveButton = $('<button/>').text('save (ctrl-s)').click(function () {
+		db.input = input.val()
 		get_github_access_token('repo', function (access_token) {
 			$.ajax({
 				type : 'GET',
