@@ -42,7 +42,7 @@ $(function () {
 					var c = Base64.decode(x.content.replace(/\s/g, ''))
 
 					var i = c.indexOf('// ' + 'SAVE HERE')
-					c = c.slice(0, i) + '// ' + 'SAVE HERE' + '\ndb = ' + _.json(db) + '\n</' + 'script></body></html>'
+					c = c.slice(0, i) + '// ' + 'SAVE HERE' + '\nvar db = ' + _.json(db) + '\n</' + 'script></body></html>'
 
 					$.ajax({
 						type : 'PUT',
