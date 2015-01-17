@@ -27,7 +27,7 @@ th, td {
 <script src="//github-access-token-getter.herokuapp.com/index.js"></script>
 <script>
 
-var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script>\n\n$(function () {\n    function makeHelloButton() {\n        $('body').append($('<button/>').text('hello again!').click(function () {\n            makeHelloButton()\n        }))\n    }\n    makeHelloButton()\n})\n\n<"+"/script>"
+var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script>\n\n$(function () {\n    function makeHelloButton() {\n        $('body').append($('<button/>').text('hello again!!').click(function () {\n            makeHelloButton()\n        }))\n    }\n    makeHelloButton()\n})\n\n<"+"/script>"
 
 $(function () {
     $(document).ajaxError(function () {
