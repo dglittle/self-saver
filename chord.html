@@ -107,8 +107,20 @@ function main() {
     })
 
     var reloadButton = $('<button/>').text('reload (ctrl-enter)').click(function () {
-        bottomRight.empty().append($('<iframe style="width:100%;height:100%"/>').attr('src', 'data:text/html;base64,' + Base64.encode(input.val())))
+        var x = Math.min(bottomRight.width(), bottomRight.height())
+        c = $('<canvas/>').attr('width', x).attr('height', x)
+        var g = c[0].getContext('2d')
+        g.setTransform(x/2, 0, 0, -x/2, x/2, x/2)
 
+        g.beginPath()
+        g.moveTo(-1, 1)
+        g.lineTo(0, -1)
+        g.closePath()
+        g.strokeStyle = 'black'
+        g.lineWidth = 2/x
+        g.stroke()
+
+        bottomRight.empty().append(c)
     })
 
     var topLeft = $('<div/>').append(saveButton).append(editInputButton).append(editOutterButton).append(forkButton)
