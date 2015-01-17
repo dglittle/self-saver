@@ -27,7 +27,7 @@ th, td {
 <script src="//github-access-token-getter.herokuapp.com/index.js"></script>
 <script>
 
-var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script>\n\n$(function () {\n    function makeHelloButton() {\n        $('body').append($('<button/>').text('hello again!!').click(function () {\n            makeHelloButton()\n        }))\n    }\n    makeHelloButton()\n})\n\n<"+"/script>"
+var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script>\n\n$(function () {\n    function makeHelloButton() {\n        $('body').append($('<button/>').text('hello again!').click(function () {\n            makeHelloButton()\n        }))\n    }\n    makeHelloButton()\n})\n\n<"+"/script>"
 
 $(function () {
     $(document).ajaxError(function () {
@@ -99,7 +99,7 @@ function main() {
                         content : Base64.encode(outter.val().replace(/\"REPLACE WITH INPUT TEXT\"/, _.json(input.val()).replace(/<\/script>/g, '<"+"/script>')))
                     }),
                     success : function (x) {
-                        window.location.href = 'http://dglittle.github.io/self-saver/' + filename
+                        window.location.href = 'http://dglittle.github.io/self-saver/' + newPath
                     }
                 })
             })
