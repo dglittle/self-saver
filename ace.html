@@ -27,9 +27,7 @@ th, td {
 <script src="http://cdn.jsdelivr.net/ace/1.1.8/min/ace.js"></script>
 <script>
 
-// test2
-
-var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script src=\"http://cdn.jsdelivr.net/ace/1.1.8/min/ace.js\"><"+"/script>\n<script>\n\n// test1\n\n$(function () {\n    var e = $('<div id=\"editor\" style=\"width:100%;height:100%\"/>').text('hi1')\n    var o = $('<div/>').text('hi2')\n    var o2 = $('<div/>').text('hi3')\n\n    $('body').append(_.splitVert(.5, .5, e, _.splitHorz(.5, .5, o, o2)))\n\n    var editor = ace.edit(\"editor\")\n    editor.setTheme(\"ace/theme/monokai\")\n    editor.renderer.setShowGutter(false)\n    editor.getSession().setMode(\"ace/mode/html\")\n    editor.on('input', function (e) {\n        o.text(editor.getSession().getValue())\n    })\n    editor.on('input', function (e) {\n        o2.text(editor.getSession().getValue())\n    })\n\n})\n\n<"+"/script>"
+var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script src=\"http://cdn.jsdelivr.net/ace/1.1.8/min/ace.js\"><"+"/script>\n<script>\n\n$(function () {\n    var e = $('<div id=\"editor\" style=\"width:100%;height:100%\"/>').text('hi1')\n    var o = $('<div/>').text('hi2')\n    var o2 = $('<div/>').text('hi3')\n\n    $('body').append(_.splitVert(.5, .5, e, _.splitHorz(.5, .5, o, o2)))\n\n    var editor = ace.edit(\"editor\")\n    editor.setTheme(\"ace/theme/monokai\")\n    editor.renderer.setShowGutter(false)\n    editor.getSession().setMode(\"ace/mode/html\")\n    editor.on('input', function (e) {\n        o.text(editor.getSession().getValue())\n    })\n    editor.on('input', function (e) {\n        o2.text(editor.getSession().getValue())\n    })\n\n})\n\n<"+"/script>"
 
 $(function () {
     $(document).ajaxError(function () {
