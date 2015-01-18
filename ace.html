@@ -80,15 +80,6 @@ function main() {
     }
 
     var input = $('<div id="input" style="width:100%;height:100%"/>')
-    var editor = ace.edit("input")
-    editor.setTheme("ace/theme/monokai")
-    editor.renderer.setShowGutter(false)
-    editor.getSession().setMode("ace/mode/html")
-    editor.on('input', function () {
-        onChange(editor.getSession().getValue())
-    })
-    var onChange = function (x) { inputText = x }
-    editor.getSession().setValue(inputText)
 
     var saveButton = $('<button/>').text('save (ctrl-s)').click(save)
     var editInputButton = $('<button/>').text('normal edit').click(function () {
@@ -119,24 +110,32 @@ function main() {
 
     $('body').append(_.splitVert(2, 1, _.splitHorz(.5, .5, topLeft, topRight), _.splitHorz(.5, .5, bottomLeft, bottomRight)))
 
+    var editor = ace.edit("input")
+    editor.setTheme("ace/theme/monokai")
+    editor.renderer.setShowGutter(false)
+    editor.getSession().setMode("ace/mode/html")
+    var onChange = function () {}
+    editor.on('input', function () {
+        onChange(editor.getSession().getValue())
+    })
+    editInputButton.click()
+
     $('body').keydown(function (e) {
         if (e.metaKey) {
-            if (e.keyCode == 83) {
-                // s
+            if (e.keyCode == 83) { // s
                 e.preventDefault()
                 saveButton.click()
             }
-            if (e.keyCode == 82 || e.keyCode == 13) {
-                // r or enter
+            if (e.keyCode == 82 || e.keyCode == 13) { // r or enter
                 e.preventDefault()
                 reloadButton.click()
             }
         }
     })
 
-    reloadButton.click()
-
     $('body').append($('<a href="https://github.com/dglittle/self-saver"><img width="64px" style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>'));
+
+    reloadButton.click()
 }
 
 </script>
