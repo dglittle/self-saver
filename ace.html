@@ -113,6 +113,10 @@ function main() {
     var editor = ace.edit("input")
     editor.setTheme("ace/theme/monokai")
     editor.renderer.setShowGutter(false)
+    editor.setOptions({
+        fontFamily: 'Menlo',
+        fontSize: '9pt'
+    });    
     editor.getSession().setMode("ace/mode/html")
     var onChange = function () {}
     editor.on('input', function () {
