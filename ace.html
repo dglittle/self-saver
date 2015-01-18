@@ -25,6 +25,7 @@ th, td {
 <script src="utils.js"></script>
 <script src="//dglittle.github.io/github-access-token-getter/index.js"></script>
 <script src="http://cdn.jsdelivr.net/ace/1.1.8/min/ace.js"></script>
+<script src="http://cdn.jsdelivr.net/ace/1.1.8/min/ext-language_tools.js"></script>
 <script>
 
 var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script src=\"http://cdn.jsdelivr.net/ace/1.1.8/min/ace.js\"><"+"/script>\n<script src=\"http://cdn.jsdelivr.net/ace/1.1.8/min/ext-language_tools.js\"><"+"/script>\n<script>\n\n$(function () {\n    var e = $('<div id=\"editor\" style=\"width:100%;height:100%\"/>').text('hi')\n    var o = $('<div/>').text('hi')\n\n    $('body').append(_.splitVert(.5, .5, e, o))\n\n    ace.require(\"ace/ext/language_tools\");\n    var editor = ace.edit(\"editor\")\n    editor.setTheme(\"ace/theme/monokai\")\n    editor.renderer.setShowGutter(false)\n    editor.getSession().setMode(\"ace/mode/html\")\n    editor.setOptions({\n        enableBasicAutocompletion: true,\n        enableLiveAutocompletion: true\n    });\n    editor.on('input', function (e) {\n        o.html(editor.getSession().getValue())\n    })\n})\n\n<"+"/script>"
@@ -110,6 +111,7 @@ function main() {
 
     $('body').append(_.splitVert(2, 1, _.splitHorz(.5, .5, topLeft, topRight), _.splitHorz(.5, .5, bottomLeft, bottomRight)))
 
+    ace.require("ace/ext/language_tools")
     var editor = ace.edit("input")
     editor.setTheme("ace/theme/monokai")
     // editor.renderer.setShowGutter(false)
@@ -117,8 +119,11 @@ function main() {
     editor.setShowFoldWidgets(false)
     editor.setOptions({
         fontFamily: 'Menlo,monospace',
-        fontSize: '9pt'
-    });    
+        fontSize: '9pt',
+        enableBasicAutocompletion: true,
+        enableLiveAutocompletion: true
+    })
+
     editor.getSession().setMode("ace/mode/html")
     var onChange = function () {}
     editor.on('input', function () {
