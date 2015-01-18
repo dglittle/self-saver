@@ -27,7 +27,7 @@ th, td {
 <script src="//github-access-token-getter.herokuapp.com/index.js"></script>
 <script>
 
-var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script>\n\n$(function () {\n    function makeHelloButton() {\n        $('body').append($('<button/>').text('hello again').click(function () {\n            makeHelloButton()\n        }))\n    }\n    makeHelloButton()\n})\n\n<"+"/script>"
+var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script>\n\n$(function () {\n    $('body').css('margin', '0px')\n\n    var x = Math.min($(window).width(), $(window).height())\n    c = $('<canvas/>').attr('width', x).attr('height', x)\n    var g = c[0].getContext('2d')\n    g.setTransform(x/2, 0, 0, -x/2, x/2, x/2)\n    $('body').append(c)\n\n    var prevPos = [0, 0]\n\n    var beginTime = _.time() / 1000\n    var lastTime = 0\n    function gameLoop() {\n        var t = _.time() / 1000 - beginTime\n        var dt = t - lastTime\n        lastTime = t\n\n        g.fillStyle = 'rgba(255, 255, 255, .1)'\n        g.fillRect(-1, -1, 2, 2)\n\n        var pos = [Math.sin(t), Math.cos(2.2*t)]\n\n        g.beginPath()\n        g.moveTo(prevPos[0], prevPos[1])\n        g.lineTo(pos[0], pos[1])\n        g.closePath()\n        g.strokeStyle = 'black'\n        g.lineWidth = 2/x\n        g.stroke()\n        prevPos = pos\n    }\n    setInterval(gameLoop, 1000 / 30)\n})\n\n<"+"/script>"
 
 $(function () {
     $(document).ajaxError(function () {
