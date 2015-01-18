@@ -27,7 +27,7 @@ th, td {
 <script src="//dglittle.github.io/github-access-token-getter/index.js"></script>
 <script>
 
-var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script src=\"http://cdn.jsdelivr.net/ace/1.1.8/min/ace.js\"><"+"/script>\n<script>\n\n$(function () {\n    var e = $('<div id=\"editor\" style=\"width:100%;height:100%\"/>').text('hi1')\n    var o = $('<div/>').text('hi2')\n\n    $('body').append(_.splitVert(.5, .5, e, o))\n\n    var editor = ace.edit(\"editor\");\n    editor.setTheme(\"ace/theme/monokai\");\n    editor.getSession().setMode(\"ace/mode/javascript\");\n\n})\n\n<"+"/script>"
+var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script src=\"http://cdn.jsdelivr.net/ace/1.1.8/min/ace.js\"><"+"/script>\n<script>\n\n$(function () {\n    var e = $('<div id=\"editor\" style=\"width:100%;height:100%\"/>').text('hi1')\n    var o = $('<div/>').text('hi2')\n\n    $('body').append(_.splitVert(.5, .5, e, o))\n\n    var editor = ace.edit(\"editor\")\n    editor.setTheme(\"ace/theme/monokai\")\n    editor.renderer.setShowGutter(false)\n    editor.getSession().setMode(\"ace/mode/html\")\n\n})\n\n<"+"/script>"
 
 $(function () {
     $(document).ajaxError(function () {
