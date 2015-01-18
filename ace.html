@@ -23,11 +23,11 @@ th, td {
 <script src="//dglittle.github.io/gl519/tab.js"></script>
 <script src="//dglittle.github.io/gl519/aes.js"></script>
 <script src="utils.js"></script>
-
 <script src="//dglittle.github.io/github-access-token-getter/index.js"></script>
+<script src="http://cdn.jsdelivr.net/ace/1.1.8/min/ace.js"></script>
 <script>
 
-var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script src=\"http://cdn.jsdelivr.net/ace/1.1.8/min/ace.js\"><"+"/script>\n<script>\n\n$(function () {\n    var e = $('<div id=\"editor\" style=\"width:100%;height:100%\"/>').text('hi1')\n    var o = $('<div/>').text('hi2')\n\n    $('body').append(_.splitVert(.5, .5, e, o))\n\n    var editor = ace.edit(\"editor\")\n    editor.setTheme(\"ace/theme/monokai\")\n    editor.renderer.setShowGutter(false)\n    editor.getSession().setMode(\"ace/mode/html\")\n\n})\n\n<"+"/script>"
+var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script src=\"http://cdn.jsdelivr.net/ace/1.1.8/min/ace.js\"><"+"/script>\n<script>\n\n$(function () {\n    var e = $('<div id=\"editor\" style=\"width:100%;height:100%\"/>').text('hi1')\n    var o = $('<div/>').text('hi2')\n    var o2 = $('<div/>').text('hi2')\n\n\n    $('body').append(_.splitVert(.5, .5, e, _.splitHorz(.5, .5, o, o2)))\n\n    var editor = ace.edit(\"editor\")\n    editor.setTheme(\"ace/theme/monokai\")\n    editor.renderer.setShowGutter(false)\n    editor.getSession().setMode(\"ace/mode/html\")\n    editor.on('input', function (e) {\n        o.text(editor.getSession().getValue())\n    })\n    editor.on('input', function (e) {\n        o2.text(editor.getSession().getValue())\n    })\n\n})\n\n<"+"/script>"
 
 $(function () {
     $(document).ajaxError(function () {
@@ -55,7 +55,7 @@ function main() {
         else get_github_access_token('repo', function (x) { access_token = x; cb(x) })
     }
         
-    function save() {
+    function saveHelper(path, cb) {
         getAccessToken(function (access_token) {
             $.ajax({
                 type : 'PUT',
@@ -63,51 +63,53 @@ function main() {
                 data : _.json({
                     path : '/' + path,
                     message : 'my commit message',
-                    content : Base64.encode(outter.val().replace(/\"REPLACE WITH INPUT TEXT\"/, _.json(input.val()).replace(/<\/script>/g, '<"+"/script>'))),
+                    content : Base64.encode(outterText.replace(/\"REPLACE WITH INPUT TEXT\"/, _.json(inputText).replace(/<\/script>/g, '<"+"/script>'))),
                     sha : outterSha
                 }),
                 success : function (x) {
-                    alert('saved')
-                    outterSha = x.content.sha
+                    cb(x)
                 }
             })
         })
     }
+    function save() {
+        saveHelper(path, function (x) {
+            alert('saved')
+            outterSha = x.content.sha
+        })
+    }
 
-    var input = $('<textarea style="width:100%;height:100%"/>').val(inputText)
-    var outter = $('<textarea style="width:100%;height:100%"/>').val(outterText)
+    var input = $('<div id="input" style="width:100%;height:100%"/>')
+    var editor = ace.edit("input")
+    editor.setTheme("ace/theme/monokai")
+    editor.renderer.setShowGutter(false)
+    editor.getSession().setMode("ace/mode/html")
+    editor.on('input', function () {
+        onChange(editor.getSession().getValue())
+    })
+    var onChange = function (x) { inputText = x }
+    editor.getSession().setValue(inputText)
 
     var saveButton = $('<button/>').text('save (ctrl-s)').click(save)
     var editInputButton = $('<button/>').text('normal edit').click(function () {
-        bottomLeft.children().detach()
-        bottomLeft.append(input)
+        onChange = function (x) { inputText = x }
+        editor.getSession().setValue(inputText)
     })
     var editOutterButton = $('<button/>').text('edit self').click(function () {
-        bottomLeft.children().detach()
-        bottomLeft.append(outter)
+        onChange = function (x) { outterText = x }
+        editor.getSession().setValue(outterText)
     })
     var forkButton = $('<button/>').text('save as..').click(function () {
         var newPath = prompt('new file name:')
         if (newPath) {
-            getAccessToken(function (access_token) {
-                $.ajax({
-                    type : 'PUT',
-                    url : 'https://api.github.com/repos/' + user + '/' + repo + '/contents/' + newPath + '?access_token=' + access_token,
-                    data : _.json({
-                        path : '/' + newPath,
-                        message : 'my commit message',
-                        content : Base64.encode(outter.val().replace(/\"REPLACE WITH INPUT TEXT\"/, _.json(input.val()).replace(/<\/script>/g, '<"+"/script>')))
-                    }),
-                    success : function (x) {
-                        window.location.href = 'http://dglittle.github.io/self-saver/' + newPath
-                    }
-                })
+            saveHelper(newPath, function (x) {
+                window.location.href = 'http://dglittle.github.io/self-saver/' + newPath
             })
         }
     })
 
     var reloadButton = $('<button/>').text('reload (ctrl-enter)').click(function () {
-        bottomRight.empty().append($('<iframe style="width:100%;height:100%" frameBorder="0"/>').attr('src', 'data:text/html;base64,' + Base64.encode(input.val())))
+        bottomRight.empty().append($('<iframe style="width:100%;height:100%" frameBorder="0"/>').attr('src', 'data:text/html;base64,' + Base64.encode(inputText)))
     })
 
     var topLeft = $('<div/>').append(saveButton).append(editInputButton).append(editOutterButton).append(forkButton)
