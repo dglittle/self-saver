@@ -28,7 +28,7 @@ th, td {
 <script src="http://cdn.jsdelivr.net/ace/1.1.8/min/ext-language_tools.js"></script>
 <script>
 
-var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script>\n\n$(function () {\n    $('body').css('margin', '0px').append($('<div/>').text('hello all'))\n\n})\n\n<"+"/script>"
+var inputText = "<script src=\"http://code.jquery.com/jquery-2.0.3.min.js\"><"+"/script>\n<script src=\"http://dglittle.github.io/gl519/index.js\"><"+"/script>\n<script>\n\n$(function () {\n    //$('body').css('margin', '0px').append($('<div/>').text('hello all'))\n\n    console.log('???? --- NEWW')\n    \n\tvar v = $('<video autoplay style=\"width:320px\" style=\"border:2px solid black\"/>')\n\t$('body').append(v)\n\n    navigator.webkitGetUserMedia({ video:true}, function () {\n        console.log('ha!')\n        $('body').append($('<div/>').text('ha!'))\n    }, function () {\n        console.log('ho?')\n        $('body').append($('<div/>').text('ho?'))\n    });\n\n\n\n\n})\n\n<"+"/script>\n"
 
 $(function () {
     $(document).ajaxError(function () {
