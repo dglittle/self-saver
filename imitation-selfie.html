@@ -21,13 +21,13 @@ $(function () {
 
 	form.append($('<input type="submit" id="hithere">'))
 	$('body').append(form)
-	$('body').append($('<button/>').text('blah!!').click(function () {
+	$('body').append($('<button/>').text('blah!!!').click(function () {
 
 		//f.
 	}))
 	
 	addEventListener("message", function (e) {
-	    $('body').append($('<img/>').attr('src', 'data:image/jpg;base64' + e.data))
+	    $('body').append($('<img/>').attr('src', 'data:image/jpg;base64,' + e.data))
 	}, false)	
 
     
