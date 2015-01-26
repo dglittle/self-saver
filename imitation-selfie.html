@@ -13,7 +13,7 @@ $(function () {
 	form.append($('<input type="hidden" name="site" value="http://dglittle.github.io/self-saver/imitation-selfie.html"/>'))
 	form.append($('<input type="hidden" name="func"/>').attr('value', '' + /* server begin */function (a, b, req) {
 	    
-		return "<b>hello</b> there! " + a + " b=" + b
+		return "<b>hello</b> there! " + a + " :: " + req.files.hihi.buffer.toString('base64')
 	}/* server end */))
 	form.append($('<input type="hidden" name="args" value="[4,38]"/>'))
 
