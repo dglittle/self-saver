@@ -7,7 +7,7 @@ $(function () {
 	var f = $('<iframe name="haha" />')
 	$('body').append(f)
 
-	var form = $('<form action="/rpc" target="haha" method="post" enctype="multipart/form-data"/>')
+	var form = $('<form action="http://odoserver.herokuapp.com/rpc" target="haha" method="post" enctype="multipart/form-data"/>')
 	form.append($('<input type="file" name="hihi" accept="image/*" capture="camera"/>'))
 
 	form.append($('<input type="hidden" name="site" value="http://localhost:5000/"/>'))
