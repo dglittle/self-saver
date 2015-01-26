@@ -13,15 +13,15 @@ $(function () {
 	form.append($('<input type="hidden" name="site" value="http://dglittle.github.io/self-saver/imitation-selfie.html"/>'))
 	form.append($('<input type="hidden" name="func"/>').attr('value', '' + /* server begin */function (a, b, req) {
 	    
-		return 'window.parent.postMessage("' +
+		return '<script>window.parent.postMessage("' +
 		    req.files.hihi.buffer.toString('base64') +
-		    '", "*")'
+		    '", "*")<'+'/script>'
 	}/* server end */))
 	form.append($('<input type="hidden" name="args" value="[4,38]"/>'))
 
 	form.append($('<input type="submit" id="hithere">'))
 	$('body').append(form)
-	$('body').append($('<button/>').text('blah!').click(function () {
+	$('body').append($('<button/>').text('blah!!').click(function () {
 
 		//f.
 	}))
