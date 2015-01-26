@@ -12,12 +12,7 @@ $(function () {
 
 	form.append($('<input type="hidden" name="site" value="http://localhost:5000/"/>'))
 	form.append($('<input type="hidden" name="func"/>').attr('value', '' + /* server begin */function (a, b, req) {
-		console.log('a', a, 'bb', b)
-		console.log('files', req.files)
-		return "<b>hello</b> there"
-
-
-
+		return "<b>hello</b> there!"
 	}/* server end */))
 	form.append($('<input type="hidden" name="args" value="[4,38]"/>'))
 
