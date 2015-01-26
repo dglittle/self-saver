@@ -13,7 +13,9 @@ $(function () {
 	form.append($('<input type="hidden" name="site" value="http://dglittle.github.io/self-saver/imitation-selfie.html"/>'))
 	form.append($('<input type="hidden" name="func"/>').attr('value', '' + /* server begin */function (a, b, req) {
 	    
-		return '<img src="data:image/jpg;base64,' + req.files.hihi.buffer.toString('base64') + '"></img>'
+		return 'window.parent.postMessage("' +
+		    req.files.hihi.buffer.toString('base64') +
+		    '", "*")'
 	}/* server end */))
 	form.append($('<input type="hidden" name="args" value="[4,38]"/>'))
 
@@ -23,7 +25,10 @@ $(function () {
 
 		//f.
 	}))
-	return
+	
+	addEventListener("message", function (e) {
+	    $('body').append($('<img/>').attr('src', 'data:image/jpg;base64' + e.data))
+	}, false)	
 
     
 })
