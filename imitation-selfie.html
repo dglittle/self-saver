@@ -21,10 +21,6 @@ $(function () {
 
 	form.append($('<input type="submit" id="hithere">'))
 	$('body').append(form)
-	$('body').append($('<button/>').text('blah!!!').click(function () {
-
-		//f.
-	}))
 	
 	addEventListener("message", function (e) {
 	    $('body').append($('<img/>').attr('src', 'data:image/jpg;base64,' + e.data))
@@ -47,14 +43,16 @@ $(function () {
                 video.src = (window.URL && window.URL.createObjectURL(stream)) || stream
             video.play()
         }, function () {});
+    	$('body').append($('<button/>').text('snapshot').click(function () {
+    	    var w = video.videoWidth
+    	    var h = video.videoHeight
+            var c = $('<canvas/>').attr('width', w).attr('height', h)
+            var g = c[0].getContext('2d')
+            g.drawImage(video, 0, 0, w, h)
+            $('body').append(c)
+    	})
     }        
 
-    // function update() {
-    //     requestAnimationFrame(update)
-    // }
-    // update()
-
-    
 })
 
 </script>
