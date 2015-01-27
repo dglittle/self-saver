@@ -3,6 +3,16 @@
 <script src="http://dglittle.github.io/gl519/index.js"></script>
 <script>
 
+function rotate(me, s) {
+    me.css({
+        '-ms-transform' : s,
+        '-moz-transform' : s,
+        '-webkit-transform' : s,
+        '-o-transform' : s
+    })
+    return me
+}
+
 $(function () {
 	var f = $('<iframe name="haha" />')
 	$('body').append(f)
@@ -34,6 +44,8 @@ $(function () {
         
     if (navigator.getUserMedia) {
         var video = $('<video/>')
+        rotate(video, 'rotateY(180deg)')
+
         $('body').append(video)
         video = video[0]
         navigator.getUserMedia({video: true}, function (stream) {
