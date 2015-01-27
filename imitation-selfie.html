@@ -58,33 +58,33 @@ $(function () {
 //   });	
 
 	
-    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia
-    window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL
-    window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function (cb) { window.setTimeout(cb, 1000 / 60) }
+    // navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia
+    // window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL
+    // window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function (cb) { window.setTimeout(cb, 1000 / 60) }
         
-    if (navigator.getUserMedia) {
-        var video = $('<video/>')
-        rotate(video, 'rotateY(180deg)')
-        video.attr('width', '100')
+    // if (navigator.getUserMedia) {
+    //     var video = $('<video/>')
+    //     rotate(video, 'rotateY(180deg)')
+    //     video.attr('width', '100')
 
-        $('body').append(video)
-        video = video[0]
-        navigator.getUserMedia({video: true}, function (stream) {
-            if (video.mozSrcObject !== undefined)
-                video.mozSrcObject = stream
-            else
-                video.src = (window.URL && window.URL.createObjectURL(stream)) || stream
-            video.play()
-        }, function () {});
-    	$('body').append($('<button/>').text('snapshot').click(function () {
-    	    var w = video.videoWidth
-    	    var h = video.videoHeight
-            var c = $('<canvas/>').attr('width', w).attr('height', h)
-            var g = c[0].getContext('2d')
-            g.drawImage(video, 0, 0, w, h)
-            $('body').append(c)
-    	}))
-    }
+    //     $('body').append(video)
+    //     video = video[0]
+    //     navigator.getUserMedia({video: true}, function (stream) {
+    //         if (video.mozSrcObject !== undefined)
+    //             video.mozSrcObject = stream
+    //         else
+    //             video.src = (window.URL && window.URL.createObjectURL(stream)) || stream
+    //         video.play()
+    //     }, function () {});
+    // 	$('body').append($('<button/>').text('snapshot').click(function () {
+    // 	    var w = video.videoWidth
+    // 	    var h = video.videoHeight
+    //         var c = $('<canvas/>').attr('width', w).attr('height', h)
+    //         var g = c[0].getContext('2d')
+    //         g.drawImage(video, 0, 0, w, h)
+    //         $('body').append(c)
+    // 	}))
+    // }
 
 })
 
