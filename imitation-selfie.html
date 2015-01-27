@@ -17,7 +17,7 @@ $(function () {
 	var ii = $('<input type="file" accept="image/*" capture="camera"/>').change(function () {
 	    var i = ii[0]
 	    var url = $(this).val()
-	    console.log('url2', url)
+	    console.log('url2', i.files[0])
 	    if (i.files && i.files[0]) {
 	        var r = new FileReader()
 	        r.onload = function (e) {
