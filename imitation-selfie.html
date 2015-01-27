@@ -45,6 +45,7 @@ $(function () {
     if (navigator.getUserMedia) {
         var video = $('<video/>')
         rotate(video, 'rotateY(180deg)')
+        video.attr('width', '100px')
 
         $('body').append(video)
         video = video[0]
