@@ -28,7 +28,31 @@ $(function () {
 	
 	addEventListener("message", function (e) {
 	    $('body').append($('<img/>').attr('src', 'data:image/jpg;base64,' + e.data))
-	}, false)	
+	}, false)
+
+
+	
+    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia
+    window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL
+    window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function (cb) { window.setTimeout(cb, 1000 / 60) }
+        
+    if (navigator.getUserMedia) {
+        var video = $('<video/>')
+        $('body').append(video)
+        video = video[0]
+        navigator.getUserMedia({video: true}, function (stream) {
+            if (video.mozSrcObject !== undefined)
+                video.mozSrcObject = stream
+            else
+                video.src = (window.URL && window.URL.createObjectURL(stream)) || stream
+            video.play()
+        }, function () {});
+    }        
+
+    // function update() {
+    //     requestAnimationFrame(update)
+    // }
+    // update()
 
     
 })
