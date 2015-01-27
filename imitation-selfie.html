@@ -21,7 +21,17 @@ $(function () {
 	    if (i.files && i.files[0]) {
 	        var r = new FileReader()
 	        r.onload = function (e) {
-	            console.log('blah', e.target.result)
+	            var img = new Image()
+	            img.onload = function () {
+            	    var w = img.width
+            	    var h = img.height
+                    var c = $('<canvas/>').attr('width', w).attr('height', h)
+                    var g = c[0].getContext('2d')
+                    g.drawImage(img, 0, 0, w, h)
+                    $('body').append(c)
+	                
+	            }
+	            img.src = e.target.result
 	        }
 	        r.readAsDataURL(i.files[0])
 	    }
