@@ -2,8 +2,15 @@
 <script src="http://dglittle.github.io/gl519/index.js"></script>
 <script>
 
+function drawGameDiv(w, h) {
+    var d = $('<div/>').css({ width : w, height : h, backgroundColor : 'red' })
+    return d
+
+}
+
 $(function () {
-    $('body').append($('<div/>').text('ho ho ho! 2: ' + window.location.href))
+    $('body').css('margin', '0px')
+    $('body').append(drawGameDiv(100, 100))
 })
 
 </script>
