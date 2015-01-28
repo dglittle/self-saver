@@ -67,7 +67,7 @@ function drawHeader() {
     return d
 }
 
-function drawButton(i, ii, text, background, color) {
+function drawButton(i, ii, text, background, color, func) {
     var m = config.margin
     var y = i * 1/6 + m/125
     var h = 1/6 - 2*m/125
@@ -76,7 +76,8 @@ function drawButton(i, ii, text, background, color) {
         transform('rotate(' + 5*(ii+1) + 'deg)').
         css('font-size', '60%').
         css('color', color || 'black').
-        html(text)
+        html(text).
+        click(func)
 }
 
 function drawQuestion(q, i) {
@@ -93,30 +94,33 @@ function drawQuestion(q, i) {
     return d
 }
 
-function drawQuestionResults(q, yes, no, i, ask) {
+function drawQuestionResults(q, yes, no, i, askFunc) {
     var cs = randomColors()
     var d = $('<div/>')
     d.append(drawLeftText(q, 'black', cs[0], i))
     d.append(drawWhiteResults(i, '' + Math.floor(100*(yes/(yes + no))) + '%<br/>' + yes + '/' + (yes + no)))
     
-    if (ask) {
-        d.append(drawButton(i, 2, 'ask<br/>new', cs[3], 'white'))
+    if (askFunc) {
+        d.append(drawButton(i, 2, 'ask<br/>new', cs[3], 'white', askFunc))
     }
     
     return d
 }
 
 function redrawEverything() {
-    D.empty()
-    D.append(drawHeader())
+    var d = $('<div/>')
+    d.append(drawHeader())
     _.each(state.questions, function (q, i) {
         if (i != 2) {
-            D.append(drawQuestion(q, i + 1))
+            d.append(drawQuestion(q, i + 1))
         } else {
-            D.append(drawQuestionResults(q, 5, 8, i + 1))
+            d.append(drawQuestionResults(q, 5, 8, i + 1))
         }
     })
-    D.append(drawQuestionResults('nothing', 2, 4, 5, true))
+    d.append(drawQuestionResults('nothing', 2, 4, 5, function () {
+        alert('got here!')
+    }))
+    D.empty().append(d)
 }
 
 function getUser() {
