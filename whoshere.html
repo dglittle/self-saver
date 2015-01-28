@@ -10,13 +10,14 @@ function getUser() {
 }
 
 $(function () {
-    var u = getUser()
+    var u = _.randomString(10) // getUser()
     
     var fb_users = new Firebase('https://whoshere22.firebaseio.com/users')
-    fb_users.child(u).set(true).onDisconnect().set(false)
-    var my_users = []
+    fb_users.child(u).set(true)
+    fb_users.child(u).onDisconnect().set(false)
+    var my_users = {}
     fb_users.on('child_added', function (x) {
-        my_users.push(x)
+        my_users[x.key()] = x.val()
         $('body').empty().append($('<code/>').text(_.json(my_users)))
     })
 
