@@ -16,7 +16,7 @@ $(function () {
     fb_users.child(u).set(true)
     fb_users.child(u).ref().onDisconnect().set(null)
     var my_users = {}
-    fb_users.on('child_added', function (x) {
+    fb_users.on('child_changed', function (x) {
         my_users[x.key()] = x.val()
         $('body').empty().append($('<code/>').text(_.json(my_users)))
     })
