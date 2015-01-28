@@ -13,7 +13,7 @@ $(function () {
     var u = _.randomString(10) // getUser()
     
     var fb = new Firebase('https://whoshere22.firebaseio.com/')
-    fb.child('users/' + u).set(true)
+    fb.child('users/' + u).set(true).ref().onDisconnect().set(null)
     
     var hi = fb.child('users').on('value', function (x) {
         $('body').empty().append($('<code/>').text(_.json(x.val(), true)))
