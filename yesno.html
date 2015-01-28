@@ -45,10 +45,18 @@ $(function () {
         g.append(d)
         
         d = $('<div style="background-color:' + cs[1] + '"/>').setPos(.6 + margin/100, y, .4/3 - 2*margin/100, h)
+        d.text('yes').css('font-size', '60%')
+        rotate(d, 'rotate(5deg)')
         g.append(d)
+        
         d = $('<div style="background-color:' + cs[2] + '"/>').setPos(.6 + .4/3 + margin/100, y, .4/3 - 2*margin/100, h)
+        d.text('no').css('font-size', '60%')
+        rotate(d, 'rotate(10deg)')
         g.append(d)
+        
         d = $('<div style="background-color:' + cs[3] + '"/>').setPos(.6 + .4/3*2 + margin/100, y, .4/3 - 2*margin/100, h)
+        d.text('skip').css('font-size', '60%')
+        rotate(d, 'rotate(20deg)')
         g.append(d)
     })
 
@@ -62,6 +70,16 @@ $(function () {
     }).text('hi!').setPos(.1, .1, .5, .5))
 
 })
+
+function rotate(me, s) {
+    me.css({
+        '-ms-transform' : s,
+        '-moz-transform' : s,
+        '-webkit-transform' : s,
+        '-o-transform' : s
+    })
+    return me
+}
 
 function toColor(a) {
     return 'rgb(' + _.map(a, function (x) { return Math.floor(x) }).join(',') + ')'
