@@ -101,33 +101,36 @@ function main() {
     var currentFile = $('<span/>').text(db.path)
 
     var reloadButton = $('<button/>').text('reload (ctrl-enter)').click(function () {
-        bottomRight.empty().append($('<iframe style="width:100%;height:100%" frameBorder="0"/>').attr('src', 'data:text/html;base64,' + Base64.encode(db.text)))
+        if ($('#useDataUrl:checked').length) {
+            bottomRight.empty().append($('<iframe style="width:100%;height:100%" frameBorder="0"/>').attr('src', 'data:text/html;base64,' + Base64.encode(db.text)))
+        } else {
+            bottomRight.empty().append('saving...')
+            saveFile(function () {
+                bottomRight.empty().append('loading...')
+                var url = 'http://' + db.user + '.github.io/' + db.repo + '/' + db.path
+                function done() {
+                    bottomRight.empty().append($('<iframe style="width:100%;height:100%" frameBorder="0"/>').attr('src', url))
+                }
+                var lastWaitTime = 100
+                function wait() {
+                    $.get(url, function (s) {
+                        if (s == db.text) done()
+                        else {
+                            lastWaitTime *= 1.5
+                            bottomRight.empty().append('waiting for github to publish.. ' + (lastWaitTime/1000) + 's till next retry')
+                            setTimeout(wait, lastWaitTime)
+                        }
+                    })
+                }
+                wait()
+            })
+        }
     })
     
-    var superloadButton = $('<button/>').text('superload').click(function () {
-        bottomRight.empty().append('loading...')
-        saveFile(function () {
-            var url = 'http://' + db.user + '.github.io/' + db.repo + '/' + db.path
-            function done() {
-                bottomRight.empty().append($('<iframe style="width:100%;height:100%" frameBorder="0"/>').attr('src', url))
-            }
-            var lastWaitTime = 250
-            function wait() {
-                $.get(url, function (s) {
-                    if (s == db.text) done()
-                    else {
-                        lastWaitTime *= 2
-                        bottomRight.empty().append('waiting for github to publish.. ' + (lastWaitTime/1000) + 's till next retry')
-                        setTimeout(wait, lastWaitTime)
-                    }
-                })
-            }
-            wait()
-        })
-    })
+    var useDataUrl = $('<label><input id="useDataUrl" type="checkbox" checked>use data url</label>')
 
     var topLeft = $('<div/>').append(saveButton).append(openButton).append(currentFile)
-    var topRight = $('<div/>').append(reloadButton).append(superloadButton)
+    var topRight = $('<div/>').append(reloadButton).append(useDataUrl)
     var bottomLeft = $('<div style="width:100%;height:100%"/>').append(input)
     var bottomRight = $('<div style="width:100%;height:100%"/>')
 
