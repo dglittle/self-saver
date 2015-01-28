@@ -3,14 +3,31 @@
 <script>
 
 function drawGameDiv(w, h) {
-    var d = $('<div/>').css({ width : w, height : h, backgroundColor : 'red' })
+    var d = $('<div/>').css({
+        position : 'absolute',
+        width : w + 'px',
+        height : h + 'px',
+        top : '50%',
+        left : '50%',
+        margin : '-' + (h/2) + 'px 0 0 -' + (w/2) + 'px',
+        backgroundColor : 'red'
+    })
     return d
-
 }
 
 $(function () {
     $('body').css('margin', '0px')
-    $('body').append(drawGameDiv(100, 100))
+    var g = drawGameDiv(100, 200)
+    g.append($('<div/>').css({
+        position : 'absolute',
+        width : 30,
+        height : 50,
+        top : '-30',
+        left : '10',
+        backgroundColor : 'blue'
+    }))
+    $('body').append(g)
 })
 
 </script>
+
