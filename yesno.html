@@ -1,0 +1,61 @@
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="http://dglittle.github.io/gl519/index.js"></script>
+<script>
+
+$(function () {
+    $('body').css('margin', '0px')
+    var g = drawGameDiv(100/125, .1)
+    $('body').append(g)
+    
+    for (var i = 0; i < 6; i++) {
+        g.append($('<div style="background-color:blue"/>').setPos(1/100, i * 1/6 + 1/125, 1 - 2/100, 1/6 - 2/125))
+    }
+
+
+    return
+    
+    g.text('hi?')
+    
+    g.append($('<div/>').css({
+        backgroundColor : 'blue'
+    }).text('hi!').setPos(.1, .1, .5, .5))
+
+})
+
+function drawGameDiv(widthOverHeight, fontSize) {
+    $('head').append('<meta name="viewport" content="width=device-width, user-scalable=no">')
+    
+    var w1 = window.innerWidth
+    var h1 = window.innerHeight
+    if (w1/h1 > widthOverHeight) {
+        var h = h1
+        var w = widthOverHeight * h
+    } else {
+        var w = w1
+        var h = w / widthOverHeight
+    }
+
+    var d = $('<div/>').css({
+        position : 'absolute',
+        left : '50%',
+        top : '50%',
+        width : w + 'px',
+        height : h + 'px',
+        margin : '-' + (h/2) + 'px 0 0 -' + (w/2) + 'px',
+        fontSize : fontSize * w + 'px'
+    })
+
+    $.fn.setPos = function (x, y, _w, _h) {
+        return this.css({
+            position : 'absolute',
+            left : x * w + 'px',
+            top : y * h + 'px',
+            width : _w * w + 'px',
+            height : _h * h + 'px'
+        })
+    }
+
+    return d
+}
+
+</script>
