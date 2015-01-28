@@ -14,7 +14,7 @@ $(function () {
     
     var fb_users = new Firebase('https://whoshere22.firebaseio.com/users')
     fb_users.child(u).set(true)
-    fb_users.child(u).onDisconnect().set(false)
+    fb_users.child(u).ref().onDisconnect().set(null)
     var my_users = {}
     fb_users.on('child_added', function (x) {
         my_users[x.key()] = x.val()
