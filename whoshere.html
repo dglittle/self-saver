@@ -1,0 +1,19 @@
+
+<script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script src="http://dglittle.github.io/gl519/index.js"></script>
+<script>
+
+function getUser() {
+    return localStorage.user ||
+        (localStorage.user = 'u' + Math.random())
+}
+
+$(function () {
+    var u = getUser()
+    
+	$('body').append($('<div/>').text('hello: ' + u))
+	
+//	https://whoshere22.firebaseio.com/
+})
+
+</script>
