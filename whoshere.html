@@ -5,8 +5,8 @@
 <script>
 
 function getUser() {
-    return localStorage.user ||
-        (localStorage.user = 'u' + Math.random())
+    return localStorage.user2 ||
+        (localStorage.user2 = _.randomString(10))
 }
 
 $(function () {
