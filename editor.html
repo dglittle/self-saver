@@ -101,7 +101,10 @@ function main() {
     var currentFile = $('<span/>').text(db.path)
 
     var reloadButton = $('<button/>').text('reload (ctrl-enter)').click(function () {
-        bottomRight.empty().append($('<iframe style="width:100%;height:100%" frameBorder="0"/>').attr('src', 'data:text/html;base64,' + Base64.encode(db.text)))
+        // bottomRight.empty().append($('<iframe style="width:100%;height:100%" frameBorder="0"/>').attr('src', 'data:text/html;base64,' + Base64.encode(db.text)))
+        bottomRight.empty().append($('<iframe style="width:100%;height:100%" frameBorder="0"/>').attr('src', 'http://dglittle.github.io/self-saver/editor-iframe.html').load(function () {
+            $(this).contents().find('body').html(db.text)
+        }))
     })
 
     var topLeft = $('<div/>').append(saveButton).append(openButton).append(currentFile)
