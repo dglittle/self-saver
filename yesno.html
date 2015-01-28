@@ -4,81 +4,165 @@
 </head>
 <body>
 <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src='https://cdn.firebase.com/js/client/2.0.4/firebase.js'></script>
 <script src="http://dglittle.github.io/gl519/index.js"></script>
 <script>
 
-$(function () {
-    $('body').css('margin', '0px')
-    
-    var g = drawGameDiv(100/125, .07)
-    $('body').append(g)
-
-    $('body').css('background-color', 'black')
-    
-    var questions = [
-        'do you like this?',
+var state = {
+    userCount : 4,
+    questions : [
         'can you lift a car?',
         'do you like Her?',
         'are you the kind of person who writes really long questions to try to break the system?',
-        'have you watched a movie this week?',
-        'can you haz cheezburger?'
+        'have you watched a movie this week?'
     ]
-    
-    _.each(questions, function (q, i) {
-        var cs = randomColors()
-        var margin = .2
-        var x = margin/100
-        var y = i * 1/6 + margin/125
-        var h = 1/6 - 2*margin/125
-        var d = $('<div style="background-color:' + cs[0] + '"/>').setPos(x, y, .6 - 2*margin/100, h)
+}
 
-        var t = $('<div/>').css('width', d.css('width'))
-        t.text(q)
-        g.append(t)
-        var per = 100
-        while (t.height() > d.height()) {
-            per -= 10
-            t.css('font-size', per + '%')
-        }
-        d.append(t)
-        
-        g.append(d)
-        
-        d = $('<div style="background-color:' + cs[1] + '"/>').setPos(.6 + margin/100, y, .4/3 - 2*margin/100, h)
-        d.text('yes').css('font-size', '60%')
-        rotate(d, 'rotate(5deg)')
-        g.append(d)
-        
-        d = $('<div style="background-color:' + cs[2] + '"/>').setPos(.6 + .4/3 + margin/100, y, .4/3 - 2*margin/100, h)
-        d.text('no').css('font-size', '60%')
-        rotate(d, 'rotate(10deg)')
-        g.append(d)
-        
-        d = $('<div style="background-color:' + cs[3] + '"/>').setPos(.6 + .4/3*2 + margin/100, y, .4/3 - 2*margin/100, h)
-        d.text('skip').css('font-size', '60%')
-        rotate(d, 'rotate(20deg)')
-        g.append(d)
+var config = {
+    margin : .2
+}
+
+function drawLeftText(text, color, background, i) {
+    var m = config.margin
+    var x = m/100
+    var y = i * 1/6 + m/125
+    var h = 1/6 - 2*m/125
+    var d = $('<div/>').
+        css({ 'background-color' : background, color : color }).
+        setPos(x, y, .6 - 2*m/100, h)
+
+    var t = $('<div/>').css('width', d.css('width'))
+    t.text(text)
+    D.append(t)
+    var per = 100
+    while (t.height() > d.height()) {
+        per -= 10
+        t.css('font-size', per + '%')
+    }
+    d.append(t)
+    
+    return d
+}
+
+function drawWhiteResults(i, html) {
+    var m = config.margin
+    var y = i * 1/6 + m/125
+    var h = 1/6 - 2*m/125
+    return $('<div/>').setPos(.6 + m/100, y, .4 - 2*m/100, h).
+        css({
+            'font-size' : '50%',
+            'color' : 'white',
+            'font-family' : 'monospace',
+            'padding-top' : 1/125*D.height() + 'px'
+        }).
+        html(html)
+}
+
+function drawHeader() {
+    var d = $('<div/>')
+    d.append(drawLeftText('yes no game', 'white', 'rgb(100,100,100)', 0))
+    try {
+        d.append(drawWhiteResults(0, 'players now: ' + _.keys(state.fb.hereNow).length))
+    } catch (e) {}
+    return d
+}
+
+function drawButton(i, ii, text, background, color) {
+    var m = config.margin
+    var y = i * 1/6 + m/125
+    var h = 1/6 - 2*m/125
+    return $('<div style="background-color:' + background + '"/>').
+        setPos(.6 + .4/3*ii + m/100, y, .4/3 - 2*m/100, h).
+        transform('rotate(' + 5*(ii+1) + 'deg)').
+        css('font-size', '60%').
+        css('color', color || 'black').
+        html(text)
+}
+
+function drawQuestion(q, i) {
+    var cs = randomColors()
+    var d = $('<div/>')
+    d.append(drawLeftText(q, 'black', cs[0], i))
+    
+    var m = config.margin
+    var y = i * 1/6 + m/125
+    var h = 1/6 - 2*m/125
+    _.each(['yes', 'no', 'skip'], function (text, ii) {
+        d.append(drawButton(i, ii, text, cs[ii + 1]))
     })
+    return d
+}
 
-
-    return
+function drawQuestionResults(q, yes, no, i, ask) {
+    var cs = randomColors()
+    var d = $('<div/>')
+    d.append(drawLeftText(q, 'black', cs[0], i))
+    d.append(drawWhiteResults(i, '' + Math.floor(100*(yes/(yes + no))) + '%<br/>' + yes + '/' + (yes + no)))
     
-    g.text('hi?')
+    if (ask) {
+        d.append(drawButton(i, 2, 'ask<br/>new', cs[3], 'white'))
+    }
     
-    g.append($('<div/>').css({
-        backgroundColor : 'blue'
-    }).text('hi!').setPos(.1, .1, .5, .5))
+    return d
+}
 
+function redrawEverything() {
+    D.empty()
+    D.append(drawHeader())
+    _.each(state.questions, function (q, i) {
+        if (i != 2) {
+            D.append(drawQuestion(q, i + 1))
+        } else {
+            D.append(drawQuestionResults(q, 5, 8, i + 1))
+        }
+    })
+    D.append(drawQuestionResults('nothing', 2, 4, 5, true))
+}
+
+function getUser() {
+    try {
+        return localStorage.user ||
+            (localStorage.user = _.randomString(10))
+    } catch (e) {
+        return _.randomString(10)
+    }
+}
+
+$(function () {
+    $('body').css('margin', '0px')
+    $('body').css('background-color', 'black')
+    D = drawGameDiv(100/125, .07)
+    $('body').append(D)
+    
+    state.user = getUser()
+
+    var fb = new Firebase('https://yesnogame.firebaseio.com/')
+    var me = fb.child('hereNow/' + state.user)
+    me.set(true)
+    me.onDisconnect().set(null)
+    
+    fb.on('value', function (x) {
+        var newFb = x.val()
+        var redraw = !state.fb ||
+            _.keys(state.fb.hereNow).length != _.keys(newFb.hereNow).length ||
+            false
+        state.fb = newFb
+        if (redraw) redrawEverything()
+    })
 })
 
-function rotate(me, s) {
-    me.css({
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+
+$.fn.transform = function (s) {
+    this.css({
         '-ms-transform' : s,
         '-moz-transform' : s,
         '-webkit-transform' : s,
         '-o-transform' : s
     })
-    return me
+    return this
 }
 
 function toColor(a) {
