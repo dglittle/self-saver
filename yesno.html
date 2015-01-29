@@ -118,7 +118,7 @@ function redrawEverything() {
         q = state.fb.questions[key]
         if (!state.answeredQuestions[key]) {
             d.append(drawQuestion(q.text, i + 1, function (response) {
-                state.answeredQuestions[key] = true
+                setAnsweredQuestion(key)
                 if (response == 'skip') {
                     state.questions[i] = null
                     updateQuestions()
@@ -135,8 +135,9 @@ function redrawEverything() {
         var q = prompt('enter a yes or no question:')
         if (q) {
             var key = _.randomString(10)
-            state.answeredQuestions[key] = true
+            setAnsweredQuestion(key)
             state.askedQuestion = key
+            state.colors[5] = randomColors()
             fb.child('questions/' + key).set({
                 text : q,
                 yes : 0,
@@ -150,13 +151,11 @@ function redrawEverything() {
     D.empty().append(d)
 }
 
-function getUser() {
+function setAnsweredQuestion(key) {
+    state.answeredQuestions[key] = true
     try {
-        return localStorage.user ||
-            (localStorage.user = _.randomString(10))
-    } catch (e) {
-        return _.randomString(10)
-    }
+        localStorage.answeredQuestions = _.json(state.answeredQuestions)
+    } catch (e) {}
 }
 
 function updateQuestions() {
@@ -187,9 +186,14 @@ $(function () {
     $('body').css('background-color', 'black')
     D = drawGameDiv(100/125, .07)
     $('body').append(D)
-    
-    state.user = getUser()
-    
+
+    try {
+        state.user = _.randomString(10)
+        state.user = localStorage.user ||
+            (localStorage.user = state.user)
+        state.answeredQuestions = _.unJson(localStorage.answeredQuestions)
+    } catch (e) {}
+
     _.each(state.colors, function (_, i) {
         state.colors[i] = randomColors()
     })
