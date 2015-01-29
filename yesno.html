@@ -9,13 +9,8 @@
 <script>
 
 var state = {
-    userCount : 4,
-    questions : [
-        'can you lift a car?',
-        'do you like Her?',
-        'are you the kind of person who writes really long questions to try to break the system?',
-        'have you watched a movie this week?'
-    ]
+    hereNow : 0,
+    questions : new Array(4)
 }
 
 var config = {
@@ -62,7 +57,7 @@ function drawHeader() {
     var d = $('<div/>')
     d.append(drawLeftText('yes no game', 'white', 'rgb(100,100,100)', 0))
     try {
-        d.append(drawWhiteResults(0, 'players now: ' + _.keys(state.fb.hereNow).length))
+        d.append(drawWhiteResults(0, 'players now: ' + state.hereNow))
     } catch (e) {}
     return d
 }
@@ -111,14 +106,26 @@ function redrawEverything() {
     var d = $('<div/>')
     d.append(drawHeader())
     _.each(state.questions, function (q, i) {
+        q = state.fb.questions[q]
+        if (!q) return
         if (i != 2) {
-            d.append(drawQuestion(q, i + 1))
+            d.append(drawQuestion(q.text, i + 1))
         } else {
-            d.append(drawQuestionResults(q, 5, 8, i + 1))
+            d.append(drawQuestionResults(q.text, q.yes, q.no, i + 1))
         }
     })
     d.append(drawQuestionResults('nothing', 2, 4, 5, function () {
-        alert('got here!')
+        var q = prompt('enter a yes or no question:')
+        if (q) {
+            var blah = fb.child('questions').push({
+                text : q,
+                yes : 0,
+                no : 0,
+                skip : 0,
+                time : _.time()
+            }).key()
+            console.log('blah', blah)
+        }
     }))
     D.empty().append(d)
 }
@@ -140,17 +147,37 @@ $(function () {
     
     state.user = getUser()
 
-    var fb = new Firebase('https://yesnogame.firebaseio.com/')
+    fb = new Firebase('https://yesnogame.firebaseio.com/')
     var me = fb.child('hereNow/' + state.user)
     me.set(true)
     me.onDisconnect().set(null)
     
     fb.on('value', function (x) {
-        var newFb = x.val()
-        var redraw = !state.fb ||
-            _.keys(state.fb.hereNow).length != _.keys(newFb.hereNow).length ||
-            false
-        state.fb = newFb
+        state.fb = x.val()
+        var redraw = false
+        
+        var newHereNow = _.values(get(state, 'fb', 'hereNow')).length
+        if (state.hereNow != newHereNow) {
+            state.hereNow = newHereNow
+            redraw = true
+        }
+        
+        while (_.any(state.questions, function (q) { return q == null })) {
+            var found = false
+            _.each(get(state, 'fb', 'questions'), function (q, key) {
+                if (state.questions.indexOf(key) >= 0) return
+                _.each(state.questions, function (q, i) {
+                    if (!q) {
+                        state.questions[i] = key
+                        redraw = true
+                        found = true
+                        return false
+                    }
+                })
+                if (found) return false
+            })
+            if (!found) break
+        }
         if (redraw) redrawEverything()
     })
 })
@@ -158,6 +185,13 @@ $(function () {
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
+
+function get() {
+    var a = arguments
+    var x = a[0]
+    for (var i = 1; x && i < a.length; i++) x = x[a[i]]
+    return x
+}
 
 $.fn.transform = function (s) {
     this.css({
