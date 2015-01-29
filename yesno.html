@@ -185,7 +185,7 @@ function saveLocal() {
 }
 
 $(function () {
-    console.log('version 6')
+    console.log('version 7')
     
     $('body').css('margin', '0px')
     $('body').css('background-color', 'black')
@@ -208,7 +208,7 @@ $(function () {
     
     fb.on('value', function (x) {
         state.fb = x.val()
-        var newHereNow = _.values(get(state, 'fb', 'hereNow')).length
+        state.hereNow = _.values(get(state, 'fb', 'hereNow')).length
         updateQuestions()
         redrawEverything()
     })
