@@ -96,13 +96,17 @@ function drawQuestion(q, i, cb) {
 function drawQuestionResults(q, yes, no, i, askFunc) {
     var cs = state.colors[i]
     var d = $('<div/>')
-    d.append(drawLeftText(q, 'black', cs[0], i))
-    d.append(drawWhiteResults(i, '' + Math.floor(100*(yes/(yes + no))) + '%<br/>' + yes + '/' + (yes + no)))
-    
+    if (q) {
+        d.append(drawLeftText(q, 'black', cs[0], i))
+        var text = (yes + no == 0) ?
+            'waiting for<br/>answers' :
+            Math.floor(100*(yes/(yes + no))) +
+                '%<br/>' + yes + '/' + (yes + no)
+        d.append(drawWhiteResults(i, text))
+    }
     if (askFunc) {
         d.append(drawButton(i, 2, 'ask<br/>new', cs[3], 'white', askFunc))
     }
-    
     return d
 }
 
@@ -125,17 +129,22 @@ function redrawEverything() {
             d.append(drawQuestionResults(q.text, q.yes, q.no, i + 1))
         }
     })
-    d.append(drawQuestionResults('nothing', 2, 4, 5, function () {
+    
+    var q = get(state, 'fb', 'questions', state.askedQuestion) || {}
+    d.append(drawQuestionResults(q.text, q.yes, q.no, 5, function () {
         var q = prompt('enter a yes or no question:')
         if (q) {
-            var blah = fb.child('questions').push({
+            var key = _.randomString(10)
+            state.answeredQuestions[key] = true
+            state.askedQuestion = key
+            fb.child('questions/' + key).set({
                 text : q,
                 yes : 0,
                 no : 0,
                 skip : 0,
                 time : _.time()
-            }).key()
-            console.log('blah', blah)
+            })
+            redrawEverything()
         }
     }))
     D.empty().append(d)
