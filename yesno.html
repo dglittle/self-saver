@@ -11,6 +11,7 @@
 var state = {
     hereNow : 0,
     questions : new Array(4),
+    colors : new Array(6),
     answeredQuestions : {}
 }
 
@@ -77,7 +78,7 @@ function drawButton(i, ii, text, background, color, func) {
 }
 
 function drawQuestion(q, i, cb) {
-    var cs = randomColors()
+    var cs = state.colors[i]
     var d = $('<div/>')
     d.append(drawLeftText(q, 'black', cs[0], i))
     
@@ -93,7 +94,7 @@ function drawQuestion(q, i, cb) {
 }
 
 function drawQuestionResults(q, yes, no, i, askFunc) {
-    var cs = randomColors()
+    var cs = state.colors[i]
     var d = $('<div/>')
     d.append(drawLeftText(q, 'black', cs[0], i))
     d.append(drawWhiteResults(i, '' + Math.floor(100*(yes/(yes + no))) + '%<br/>' + yes + '/' + (yes + no)))
@@ -159,6 +160,7 @@ function updateQuestions() {
             _.each(state.questions, function (q, i) {
                 if (!q) {
                     state.questions[i] = key
+                    state.colors[i + 1] = randomColors()
                     redraw = true
                     found = true
                     return false
@@ -178,6 +180,10 @@ $(function () {
     $('body').append(D)
     
     state.user = getUser()
+    
+    _.each(state.colors, function (_, i) {
+        state.colors[i] = randomColors()
+    })
 
     fb = new Firebase('https://yesnogame.firebaseio.com/')
     var me = fb.child('hereNow/' + state.user)
