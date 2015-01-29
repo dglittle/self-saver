@@ -85,7 +85,7 @@ function drawQuestion(q, i, cb) {
     var y = i * 1/6 + m/125
     var h = 1/6 - 2*m/125
     _.each(['yes', 'no', 'skip'], function (text, ii) {
-        d.append(drawButton(i, ii, text, cs[ii + 1], function () {
+        d.append(drawButton(i, ii, text, cs[ii + 1], 'black', function () {
             cb(text)
         }))
     })
