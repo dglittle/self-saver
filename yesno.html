@@ -115,14 +115,20 @@ function redrawEverything() {
     d.append(drawHeader())
     _.each(state.questions, function (key, i) {
         if (!key) return
-        q = state.fb.questions[key]
+        var q = state.fb.questions[key]
         if (!state.answeredQuestions[key]) {
             d.append(drawQuestion(q.text, i + 1, function (response) {
                 state.answeredQuestions[key] = true
                 saveLocal()
                 if (response == 'skip') {
                     state.questions[i] = null
-                    updateQuestions()
+                } else {
+                    _.each(state.questions, function (key2, i) {
+                        if (key2 != key && state.answeredQuestions[key2]) {
+                            state.questions[i] = null
+                            return false
+                        }
+                    })
                 }
                 fb.child('questions/' + key + '/' + response).transaction(function (x) {
                     return (x || 0) + 1
@@ -185,7 +191,7 @@ function saveLocal() {
 }
 
 $(function () {
-    console.log('version 7')
+    console.log('version 8')
     
     $('body').css('margin', '0px')
     $('body').css('background-color', 'black')
