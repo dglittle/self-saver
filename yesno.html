@@ -80,7 +80,7 @@ function drawButton(i, ii, text, background, color, func) {
 function drawQuestion(q, i, cb) {
     var cs = state.colors[i]
     var d = $('<div/>')
-    d.append(drawLeftText(q, 'black', cs[0], i))
+    d.append(drawLeftText(q.text, 'black', cs[0], i))
     
     var m = config.margin
     var y = i * 1/6 + m/125
@@ -93,15 +93,18 @@ function drawQuestion(q, i, cb) {
     return d
 }
 
-function drawQuestionResults(q, yes, no, i, askFunc) {
+function drawQuestionResults(q, i, askFunc) {
     var cs = state.colors[i]
     var d = $('<div/>')
-    if (q) {
-        d.append(drawLeftText(q, 'black', cs[0], i))
-        var text = (yes + no == 0) ?
+    if (q.text) {
+        d.append(drawLeftText(q.text, 'black', cs[0], i))
+        var text = (q.yes + q.no == 0) ?
             'waiting for<br/>answers' :
-            Math.floor(100*(yes/(yes + no))) +
-                '%<br/>' + yes + '/' + (yes + no)
+            Math.floor(100*(q.yes/(q.yes + q.no))) +
+                '%<br/>' + q.yes + '/' + (q.yes + q.no)
+        if (q.skip) {
+            text += '<br/>skips: ' + q.skip
+        }
         d.append(drawWhiteResults(i, text))
     }
     if (askFunc) {
@@ -113,34 +116,34 @@ function drawQuestionResults(q, yes, no, i, askFunc) {
 function redrawEverything() {
     var d = $('<div/>')
     d.append(drawHeader())
-    _.each(state.questions, function (key, i) {
-        if (!key) return
-        var q = state.fb.questions[key]
-        if (!state.answeredQuestions[key]) {
-            d.append(drawQuestion(q.text, i + 1, function (response) {
-                state.answeredQuestions[key] = true
+    _.each(state.questions, function (q, i) {
+        if (!q) return
+        var q = state.fb.questions[q]
+        if (!state.answeredQuestions[q.key]) {
+            d.append(drawQuestion(q, i + 1, function (response) {
+                state.answeredQuestions[q.key] = true
                 saveLocal()
                 if (response == 'skip') {
                     state.questions[i] = null
                 } else {
-                    _.each(state.questions, function (key2, i) {
-                        if (key2 != key && state.answeredQuestions[key2]) {
+                    _.each(state.questions, function (key, i) {
+                        if (key != q.key && state.answeredQuestions[key]) {
                             state.questions[i] = null
                             return false
                         }
                     })
                 }
-                fb.child('questions/' + key + '/' + response).transaction(function (x) {
+                fb.child('questions/' + q.key + '/' + response).transaction(function (x) {
                     return (x || 0) + 1
                 })
             }))
         } else {
-            d.append(drawQuestionResults(q.text, q.yes, q.no, i + 1))
+            d.append(drawQuestionResults(q, i + 1))
         }
     })
     
     var q = get(state, 'fb', 'questions', state.askedQuestion) || {}
-    d.append(drawQuestionResults(q.text, q.yes, q.no, 5, function () {
+    d.append(drawQuestionResults(q, 5, function () {
         var q = prompt('enter a yes or no question:')
         if (q) {
             var key = _.randomString(10)
@@ -149,6 +152,7 @@ function redrawEverything() {
             saveLocal()
             state.colors[5] = randomColors()
             fb.child('questions/' + key).set({
+                key : key,
                 text : q,
                 yes : 0,
                 no : 0,
@@ -161,22 +165,24 @@ function redrawEverything() {
 }
 
 function updateQuestions() {
+    var blackList = _.clone(state.answeredQuestions)
+    _.each(state.questions, function (q) { blackList[q] = true })
+    var qs = _.toArray(get(state, 'fb', 'questions') || {})
+    qs = _.filter(qs, function (q) {
+        return !blackList[q.key] && q.skip < 3
+    })
+    qs = _.sort(qs, function (q) { return -q.time })
+
     while (_.any(state.questions, function (q) { return q == null })) {
-        var found = false
-        _.each(get(state, 'fb', 'questions'), function (q, key) {
-            if (state.questions.indexOf(key) >= 0) return
-            if (state.answeredQuestions[key]) return
-            _.each(state.questions, function (q, i) {
-                if (!q) {
-                    state.questions[i] = key
+        if (!_.any(qs, function (q) {
+            return _.any(state.questions, function (q2, i) {
+                if (!q2) {
+                    state.questions[i] = q.key
                     state.colors[i + 1] = randomColors()
-                    found = true
-                    return false
+                    return true
                 }
             })
-            if (found) return false
-        })
-        if (!found) break
+        })) break
     }
 }
 
@@ -191,7 +197,7 @@ function saveLocal() {
 }
 
 $(function () {
-    console.log('version 8')
+    console.log('version 9')
     
     $('body').css('margin', '0px')
     $('body').css('background-color', 'black')
