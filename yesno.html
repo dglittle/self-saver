@@ -108,11 +108,8 @@ function redrawEverything() {
     _.each(state.questions, function (q, i) {
         q = state.fb.questions[q]
         if (!q) return
-        if (i != 2) {
-            d.append(drawQuestion(q.text, i + 1))
-        } else {
-            d.append(drawQuestionResults(q.text, q.yes, q.no, i + 1))
-        }
+        d.append(drawQuestion(q.text, i + 1))
+        // d.append(drawQuestionResults(q.text, q.yes, q.no, i + 1))
     })
     d.append(drawQuestionResults('nothing', 2, 4, 5, function () {
         var q = prompt('enter a yes or no question:')
