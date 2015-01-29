@@ -137,8 +137,8 @@ function redrawEverything() {
         if (q) {
             var key = _.randomString(10)
             state.answeredQuestions[key] = true
-            saveLocal()
             state.askedQuestion = key
+            saveLocal()
             state.colors[5] = randomColors()
             fb.child('questions/' + key).set({
                 text : q,
@@ -187,7 +187,7 @@ function saveLocal() {
 }
 
 $(function () {
-    console.log('version 3')
+    console.log('version 4')
     
     $('body').css('margin', '0px')
     $('body').css('background-color', 'black')
