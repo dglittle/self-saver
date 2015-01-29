@@ -167,18 +167,20 @@ function redrawEverything() {
 function updateQuestions() {
     var blackList = _.clone(state.answeredQuestions)
     _.each(state.questions, function (q) { blackList[q] = true })
-    var qs = _.toArray(get(state, 'fb', 'questions') || {})
+    
+    var qs = _.values(get(state, 'fb', 'questions'))
     qs = _.filter(qs, function (q) {
         return !blackList[q.key] && q.skip < 3
     })
     qs = _.sort(qs, function (q) { return -q.time })
 
     while (_.any(state.questions, function (q) { return q == null })) {
-        if (!_.any(qs, function (q) {
-            return _.any(state.questions, function (q2, i) {
+        if (!_.any(qs, function (q, i) {
+            return _.any(state.questions, function (q2, i2) {
                 if (!q2) {
-                    state.questions[i] = q.key
-                    state.colors[i + 1] = randomColors()
+                    state.questions[i2] = q.key
+                    state.colors[i2 + 1] = randomColors()
+                    qs.splice(i, 1)
                     return true
                 }
             })
@@ -197,7 +199,7 @@ function saveLocal() {
 }
 
 $(function () {
-    console.log('version 9')
+    console.log('version 10')
     
     $('body').css('margin', '0px')
     $('body').css('background-color', 'black')
