@@ -10,7 +10,8 @@
 
 var state = {
     hereNow : 0,
-    questions : new Array(4)
+    questions : new Array(4),
+    answeredQuestions : {}
 }
 
 var config = {
@@ -75,7 +76,7 @@ function drawButton(i, ii, text, background, color, func) {
         click(func)
 }
 
-function drawQuestion(q, i) {
+function drawQuestion(q, i, cb) {
     var cs = randomColors()
     var d = $('<div/>')
     d.append(drawLeftText(q, 'black', cs[0], i))
@@ -84,7 +85,9 @@ function drawQuestion(q, i) {
     var y = i * 1/6 + m/125
     var h = 1/6 - 2*m/125
     _.each(['yes', 'no', 'skip'], function (text, ii) {
-        d.append(drawButton(i, ii, text, cs[ii + 1]))
+        d.append(drawButton(i, ii, text, cs[ii + 1], function () {
+            cb(text)
+        }))
     })
     return d
 }
@@ -105,11 +108,21 @@ function drawQuestionResults(q, yes, no, i, askFunc) {
 function redrawEverything() {
     var d = $('<div/>')
     d.append(drawHeader())
-    _.each(state.questions, function (q, i) {
-        q = state.fb.questions[q]
-        if (!q) return
-        d.append(drawQuestion(q.text, i + 1))
-        // d.append(drawQuestionResults(q.text, q.yes, q.no, i + 1))
+    _.each(state.questions, function (key, i) {
+        if (!key) return
+        q = state.fb.questions[key]
+        if (!state.answeredQuestions[key]) {
+            d.append(drawQuestion(q.text, i + 1, function (response) {
+                state.answeredQuestions[key] = true
+                if (response == 'skip') {
+                    state.questions[i] = null
+                    updateQuestions()
+                }
+                redrawEverything()
+            }))
+        } else {
+            d.append(drawQuestionResults(q.text, q.yes, q.no, i + 1))
+        }
     })
     d.append(drawQuestionResults('nothing', 2, 4, 5, function () {
         var q = prompt('enter a yes or no question:')
@@ -136,6 +149,28 @@ function getUser() {
     }
 }
 
+function updateQuestions() {
+    var redraw = false
+    while (_.any(state.questions, function (q) { return q == null })) {
+        var found = false
+        _.each(get(state, 'fb', 'questions'), function (q, key) {
+            if (state.questions.indexOf(key) >= 0) return
+            if (state.answeredQuestions[key]) return
+            _.each(state.questions, function (q, i) {
+                if (!q) {
+                    state.questions[i] = key
+                    redraw = true
+                    found = true
+                    return false
+                }
+            })
+            if (found) return false
+        })
+        if (!found) break
+    }
+    return redraw
+}
+
 $(function () {
     $('body').css('margin', '0px')
     $('body').css('background-color', 'black')
@@ -159,22 +194,8 @@ $(function () {
             redraw = true
         }
         
-        while (_.any(state.questions, function (q) { return q == null })) {
-            var found = false
-            _.each(get(state, 'fb', 'questions'), function (q, key) {
-                if (state.questions.indexOf(key) >= 0) return
-                _.each(state.questions, function (q, i) {
-                    if (!q) {
-                        state.questions[i] = key
-                        redraw = true
-                        found = true
-                        return false
-                    }
-                })
-                if (found) return false
-            })
-            if (!found) break
-        }
+        if (updateQuestions()) redraw = true
+        
         if (redraw) redrawEverything()
     })
 })
