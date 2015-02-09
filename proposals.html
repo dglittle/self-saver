@@ -57,10 +57,10 @@ function drawProposal(p) {
         dd.append(email).append($('<button/>').text("I'm interested!").click(function () {
             var e = email.val()
             var key = _.randomString(10)
-            fb.child('emails/' + key).set(e)
-            fb.child('public/proposals/' + p.key + '/' + key).set(true)
             state.local.proposalsInterestedIn[p.key] = true
             saveLocal()
+            fb.child('emails/' + key).set(e)
+            fb.child('public/proposals/' + p.key + '/' + key).set(true)
         }))
     }
     dd.append($('<span style="margin:15px"/>').text(_.values(get(state, 'fb', 'proposals', p.key)).length + ' interested so far'))
@@ -83,7 +83,7 @@ function redrawEverything() {
 }
 
 $(function () {
-    console.log('version 3')
+    console.log('version 4')
     $('body').css('margin', '0px')
     
     loadLocal()
