@@ -82,13 +82,13 @@ $(function () {
     me.set(true)
     me.onDisconnect().set(null)
     
-    fb.on('value', function (x) {
+    fb.child('public').on('value', function (x) {
         state.fb = x.val()
         
         // work here
         console.log(state)
         
-        state.hereNow = _.values(get(state, 'fb', 'public', 'hereNow')).length
+        state.hereNow = _.values(get(state, 'fb', 'hereNow')).length
         redrawEverything()
     })
 })
