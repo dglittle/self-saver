@@ -65,7 +65,7 @@ function drawProposal(p) {
     }
     dd.append($('<span style="margin:15px"/>').text(_.values(get(state, 'fb', 'proposals', p.key)).length + ' interested so far'))
     if (state.local.proposalsInterestedIn[p.key]) {
-        dd.append($('<span style="margin:15px"/>').html('<b>including you!</b>')
+        dd.append($('<span style="margin:15px"/>').html('<b>including you!</b>'))
     }
     return d
 }
