@@ -53,9 +53,9 @@ function drawProposal(p) {
         var e = email.val()
         var key = _.randomString(10)
         fb.child('emails/' + key).set(e, function () {
-            fb.child('proposals/' + p.key + '/' + key).set(true)
+            fb.child('public/proposals/' + p.key + '/' + key).set(true)
         })
-    })))
+    })).append($('<span/>').text('hi there?')))
     return d
 }
 
@@ -84,10 +84,6 @@ $(function () {
     
     fb.child('public').on('value', function (x) {
         state.fb = x.val()
-        
-        // work here
-        console.log(state)
-        
         state.hereNow = _.values(get(state, 'fb', 'hereNow')).length
         redrawEverything()
     })
