@@ -78,7 +78,7 @@ $(function () {
     loadLocal()
 
     fb = new Firebase('https://proposals22.firebaseio.com/')
-    var me = fb.child('hereNow/' + state.local.user)
+    var me = fb.child('public/hereNow/' + state.local.user)
     me.set(true)
     me.onDisconnect().set(null)
     
@@ -88,7 +88,7 @@ $(function () {
         // work here
         console.log(state)
         
-        state.hereNow = _.values(get(state, 'fb', 'hereNow')).length
+        state.hereNow = _.values(get(state, 'fb', 'public', 'hereNow')).length
         redrawEverything()
     })
 })
