@@ -12,20 +12,24 @@ var state = {
     local : {},
     proposals : [
         {
-            text : 'hi there!'
+            key : 'kfhfygmciwoslkd',
+            title : 'imitation selfie game',
+            text : "When you load the game, it shows you a picture to imitate, like a character in a movie making a funny expression. Then you use a simple interface to upload a selfie imitating the picture, after which you get to see other people's selfies.\nI'm thinking it would provide a new image to imitate every minute. If it is popular enough, the interface for viewing other people's selfies can also double as a voting interface so that the community can find the best selfies."
         }
     ]
 }
 
+var localStorageKey = window.location.href.match(/(.*?)(\?|\#|$)/)[1]
+
 function saveLocal() {
     try {
-        localStorage[window.location.href] = _.json(state.local)
+        localStorage[localStorageKey] = _.json(state.local)
     } catch (e) {}
 }
 
 function loadLocal() {
     try {
-        _.merge(state.local, _.unJson(localStorage[window.location.href]))
+        _.merge(state.local, _.unJson(localStorage[localStorageKey]))
     } catch (e) {}
     if (!state.local.user) {
         state.local.user = _.randomString(10)
@@ -34,8 +38,12 @@ function loadLocal() {
 }
 
 function drawProposal(p) {
-    var d = $('<div style="-moz-border-radius: 15px;border-radius: 15px; background: grey"/>')
-    d.append($('<div/>').text(p.text))
+    var d = $('<div style="margin:15px;padding:15px;-moz-border-radius: 15px;border-radius: 15px; background: #f0f0f0"/>')
+    d.append($('<div style="font-size:150%;font-weight: bold"/>').text(p.title))
+    _.each(p.text.split(/\n/), function (line) {
+        d.append($('<div style="margin-top:15px"/>').text(line))
+    })
+    d.append($('<div style="margin-top:15px"/>').append($('<input type="text"/>')))
     return d
 }
 
