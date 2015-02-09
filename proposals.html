@@ -15,6 +15,11 @@ var state = {
             key : 'kfhfygmciwoslkd',
             title : 'imitation selfie game',
             text : "When you load the game, it shows you a picture to imitate, like a character in a movie making a funny expression. Then you use a simple interface to upload a selfie imitating the picture, after which you get to see other people's selfies.\nI'm thinking it would provide a new image to imitate every minute. If it is popular enough, the interface for viewing other people's selfies can also double as a voting interface so that the community can find the best selfies."
+        },
+        {
+            key : 'kfhfygmciwoslkd',
+            title : 'liar game',
+            text : "You see videos of people telling the truth and lying, and you try to guess which is which, getting a score of how good you are at detecting lying. You can also upload a truth and lie video, and see how good you are at lying.\nTo ensure that people really are telling the truth or lying, the video could involve the person saying what is printed on a piece of paper that is held in the video, and then revealing the paper (of course, people wouldn't see that part until they made a guess about whether the video was a lie)."
         }
     ]
 }
@@ -43,7 +48,14 @@ function drawProposal(p) {
     _.each(p.text.split(/\n/), function (line) {
         d.append($('<div style="margin-top:15px"/>').text(line))
     })
-    d.append($('<div style="margin-top:15px"/>').append($('<input type="text"/>')))
+    var email = $('<input placeholder="your@email.com" type="text"/>')
+    d.append($('<div style="margin-top:15px"/>').append(email).append($('<button/>').text("I'm interested!").click(function () {
+        var e = email.val()
+        var key = _.randomString(10)
+        fb.child('emails/' + key).set(e, function () {
+            fb.child('proposals/' + p.key + '/' + key).set(true)
+        })
+    })))
     return d
 }
 
