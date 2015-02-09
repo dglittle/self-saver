@@ -55,7 +55,7 @@ function drawProposal(p) {
         fb.child('emails/' + key).set(e, function () {
             fb.child('public/proposals/' + p.key + '/' + key).set(true)
         })
-    })).append($('<span/>').text('hi there?')))
+    })).append($('<span style="margin-left:15px"/>').text(_.values(get(state, 'fb', 'proposals', key)).length + ' interested so far')))
     return d
 }
 
