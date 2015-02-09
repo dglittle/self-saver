@@ -87,6 +87,7 @@ function drawHeader() {
 
 function redrawEverything() {
     var d = $('<div/>')
+    d.append(drawHeader())
     
     _.each(state.proposals, function (p) {
         d.append(drawProposal(p))
