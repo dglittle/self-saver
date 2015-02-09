@@ -1,0 +1,311 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, user-scalable=no">
+</head>
+<body>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src='https://cdn.firebase.com/js/client/2.0.4/firebase.js'></script>
+<script src="http://dglittle.github.io/gl519/index.js"></script>
+<script>
+
+var state = {
+    hereNow : 0,
+    questions : new Array(4),
+    colors : new Array(6),
+    answeredQuestions : {}
+}
+
+var config = {
+    margin : .2
+}
+
+function drawLeftText(text, color, background, i) {
+    var m = config.margin
+    var x = m/100
+    var y = i * 1/6 + m/125
+    var h = 1/6 - 2*m/125
+    var d = $('<div/>').
+        css({ 'background-color' : background, color : color }).
+        setPos(x, y, .6 - 2*m/100, h)
+
+    var t = $('<div/>').css('width', d.css('width'))
+    t.text(text)
+    D.append(t)
+    var per = 100
+    while (t.height() > d.height()) {
+        per -= 10
+        t.css('font-size', per + '%')
+    }
+    d.append(t)
+    
+    return d
+}
+
+function drawWhiteResults(i, html) {
+    var m = config.margin
+    var y = i * 1/6 + m/125
+    var h = 1/6 - 2*m/125
+    return $('<div/>').setPos(.6 + m/100, y, .4 - 2*m/100, h).
+        css({
+            'font-size' : '50%',
+            'color' : 'white',
+            'font-family' : 'monospace',
+            'padding-top' : 1/125*D.height() + 'px'
+        }).
+        html(html)
+}
+
+function drawHeader() {
+    var d = $('<div/>')
+    d.append(drawLeftText('yes no game', 'white', 'rgb(100,100,100)', 0))
+    try {
+        d.append(drawWhiteResults(0, 'players now: ' + state.hereNow))
+    } catch (e) {}
+    return d
+}
+
+function drawButton(i, ii, text, background, color, func) {
+    var m = config.margin
+    var y = i * 1/6 + m/125
+    var h = 1/6 - 2*m/125
+    return $('<div style="background-color:' + background + '"/>').
+        setPos(.6 + .4/3*ii + m/100, y, .4/3 - 2*m/100, h).
+        transform('rotate(' + 5*(ii+1) + 'deg)').
+        css('font-size', '60%').
+        css('color', color || 'black').
+        html(text).
+        click(func)
+}
+
+function drawQuestion(q, i, cb) {
+    var cs = state.colors[i]
+    var d = $('<div/>')
+    d.append(drawLeftText(q.text, 'black', cs[0], i))
+    
+    var m = config.margin
+    var y = i * 1/6 + m/125
+    var h = 1/6 - 2*m/125
+    _.each(['yes', 'no', 'skip'], function (text, ii) {
+        d.append(drawButton(i, ii, text, cs[ii + 1], 'black', function () {
+            cb(text)
+        }))
+    })
+    return d
+}
+
+function drawQuestionResults(q, i, askFunc) {
+    var cs = state.colors[i]
+    var d = $('<div/>')
+    if (q.text) {
+        d.append(drawLeftText(q.text, 'black', cs[0], i))
+        var text = (q.yes + q.no == 0) ?
+            'waiting for<br/>answers' :
+            Math.floor(100*(q.yes/(q.yes + q.no))) +
+                '%<br/>' + q.yes + '/' + (q.yes + q.no)
+        if (q.skip) {
+            text += '<br/>skips: ' + q.skip
+        }
+        d.append(drawWhiteResults(i, text))
+    }
+    if (askFunc) {
+        d.append(drawButton(i, 2, 'ask<br/>new', cs[3], 'white', askFunc))
+    }
+    return d
+}
+
+function redrawEverything() {
+    var d = $('<div/>')
+    d.append(drawHeader())
+    _.each(state.questions, function (q, i) {
+        if (!q) return
+        var q = state.fb.questions[q]
+        if (!state.answeredQuestions[q.key]) {
+            d.append(drawQuestion(q, i + 1, function (response) {
+                state.answeredQuestions[q.key] = true
+                saveLocal()
+                if (response == 'skip') {
+                    state.questions[i] = null
+                } else {
+                    _.each(state.questions, function (key, i) {
+                        if (key != q.key && state.answeredQuestions[key]) {
+                            state.questions[i] = null
+                            return false
+                        }
+                    })
+                }
+                fb.child('questions/' + q.key + '/' + response).transaction(function (x) {
+                    return (x || 0) + 1
+                })
+            }))
+        } else {
+            d.append(drawQuestionResults(q, i + 1))
+        }
+    })
+    
+    var q = get(state, 'fb', 'questions', state.askedQuestion) || {}
+    d.append(drawQuestionResults(q, 5, function () {
+        var q = prompt('enter a yes or no question:')
+        if (q) {
+            var key = _.randomString(10)
+            state.answeredQuestions[key] = true
+            state.askedQuestion = key
+            saveLocal()
+            state.colors[5] = randomColors()
+            fb.child('questions/' + key).set({
+                key : key,
+                text : q,
+                yes : 0,
+                no : 0,
+                skip : 0,
+                time : _.time()
+            })
+        }
+    }))
+    D.empty().append(d)
+}
+
+function updateQuestions() {
+    var blackList = _.clone(state.answeredQuestions)
+    _.each(state.questions, function (q) { blackList[q] = true })
+    
+    var qs = _.values(get(state, 'fb', 'questions'))
+    qs = _.filter(qs, function (q) {
+        return !blackList[q.key] && q.skip < 3
+    })
+    qs = _.sort(qs, function (q) { return -q.time })
+
+    while (_.any(state.questions, function (q) { return q == null })) {
+        if (!_.any(qs, function (q, i) {
+            return _.any(state.questions, function (q2, i2) {
+                if (!q2) {
+                    state.questions[i2] = q.key
+                    state.colors[i2 + 1] = randomColors()
+                    qs.splice(i, 1)
+                    return true
+                }
+            })
+        })) break
+    }
+}
+
+function saveLocal() {
+    try {
+        localStorage.yesnogame = _.json({
+            user : state.user,
+            answeredQuestions : state.answeredQuestions,
+            askedQuestion : state.askedQuestion
+        })
+    } catch (e) {}
+}
+
+$(function () {
+    console.log('version 10')
+    
+    $('body').css('margin', '0px')
+    $('body').css('background-color', 'black')
+    D = drawGameDiv(100/125, .07)
+    $('body').append(D)
+
+    try {
+        _.merge(state, _.unJson(localStorage.yesnogame))
+    } catch (e) {}
+    if (!state.user) state.user = _.randomString(10)
+
+    _.each(state.colors, function (_, i) {
+        state.colors[i] = randomColors()
+    })
+
+    fb = new Firebase('https://yesnogame.firebaseio.com/')
+    var me = fb.child('hereNow/' + state.user)
+    me.set(true)
+    me.onDisconnect().set(null)
+    
+    fb.on('value', function (x) {
+        state.fb = x.val()
+        state.hereNow = _.values(get(state, 'fb', 'hereNow')).length
+        updateQuestions()
+        redrawEverything()
+    })
+})
+
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+
+function get() {
+    var a = arguments
+    var x = a[0]
+    for (var i = 1; x && i < a.length; i++) x = x[a[i]]
+    return x
+}
+
+$.fn.transform = function (s) {
+    this.css({
+        '-ms-transform' : s,
+        '-moz-transform' : s,
+        '-webkit-transform' : s,
+        '-o-transform' : s
+    })
+    return this
+}
+
+function toColor(a) {
+    return 'rgb(' + _.map(a, function (x) { return Math.floor(x) }).join(',') + ')'
+}
+
+function randomColors() {
+    var colors = []
+
+    var a = [255, 128, _.lerp(0, 128, 1, 255, Math.random())]
+    _.shuffle(a)
+    colors.push(toColor(a))
+    
+    a = _.map(a, function (x) { return _.lerp(0, x, 1, 0, 1/4) })
+    colors.push(toColor(a))
+    
+    a = _.map(a, function (x) { return _.lerp(0, x, 1, 0, 1/3) })
+    colors.push(toColor(a))
+    
+    a = _.map(a, function (x) { return _.lerp(0, x, 1, 0, 1/2) })
+    colors.push(toColor(a))
+    
+    return colors
+}
+
+function drawGameDiv(widthOverHeight, fontSize) {
+    var w1 = window.innerWidth
+    var h1 = window.innerHeight
+    if (w1/h1 > widthOverHeight) {
+        var h = h1
+        var w = widthOverHeight * h
+    } else {
+        var w = w1
+        var h = w / widthOverHeight
+    }
+
+    var d = $('<div/>').css({
+        position : 'absolute',
+        left : '50%',
+        top : '50%',
+        width : w + 'px',
+        height : h + 'px',
+        margin : '-' + (h/2) + 'px 0 0 -' + (w/2) + 'px',
+        fontSize : fontSize * w + 'px'
+    })
+
+    $.fn.setPos = function (x, y, _w, _h) {
+        return this.css({
+            position : 'absolute',
+            left : x * w + 'px',
+            top : y * h + 'px',
+            width : _w * w + 'px',
+            height : _h * h + 'px'
+        })
+    }
+
+    return d
+}
+
+</script>
+</body>
+</html>
