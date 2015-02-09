@@ -33,9 +33,19 @@ function loadLocal() {
     }
 }
 
+function drawProposal(p) {
+    var d = $('<div style="-moz-border-radius: 15px;border-radius: 15px; background: grey"/>')
+    d.append($('<div/>').text(p.text))
+    return d
+}
+
 function redrawEverything() {
     var d = $('<div/>')
     
+    _.each(state.proposals, function (p) {
+        d.append(drawProposal(p))
+    })
+
     d.append($('<div/>').text('here now: ' + state.hereNow))
 
     $('body').empty().append(d)
