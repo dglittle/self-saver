@@ -85,7 +85,7 @@ $(function () {
     fb.child('public').on('value', function (x) {
         state.fb = x.val()
         state.hereNow = _.values(get(state, 'fb', 'hereNow')).length
-        redrawEverything()
+        //redrawEverything()
     })
 })
 
