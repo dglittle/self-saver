@@ -50,9 +50,11 @@ function drawProposal(p) {
     _.each(p.text.split(/\n/), function (line) {
         d.append($('<div style="margin-top:15px"/>').text(line))
     })
+    var dd = $('<div style="margin-top:15px"/>')
+    d.append(dd)
     if (!state.local.proposalsInterestedIn[p.key]) {
         var email = $('<input placeholder="your@email.com" type="text"/>')
-        d.append($('<div style="margin-top:15px"/>').append(email).append($('<button/>').text("I'm interested!").click(function () {
+        dd.append(email).append($('<button/>').text("I'm interested!").click(function () {
             var e = email.val()
             var key = _.randomString(10)
             fb.child('emails/' + key).set(e)
@@ -61,10 +63,9 @@ function drawProposal(p) {
             saveLocal()
         }))
     }
-    d.append($('<span style="margin:15px"/>').text(_.values(get(state, 'fb', 'proposals', p.key)).length + ' interested so far')))
+    dd.append($('<span style="margin:15px"/>').text(_.values(get(state, 'fb', 'proposals', p.key)).length + ' interested so far')))
     if (state.local.proposalsInterestedIn[p.key]) {
-        d.append($('<span style="margin:15px"/>').html('<b>including you!</b>')
-        
+        dd.append($('<span style="margin:15px"/>').html('<b>including you!</b>')
     }
     return d
 }
