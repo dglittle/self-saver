@@ -54,7 +54,7 @@ function drawProposal(p) {
     d.append(dd)
     if (!state.local.proposalsInterestedIn[p.key]) {
         var email = $('<input placeholder="your@email.com" type="text"/>')
-        dd.append(email).append($('<button/>').text("I'm interested!").click(function () {
+        dd.append(email).append($('<button style="margin-right:15px"/>').text("I'm interested!").click(function () {
             var e = email.val()
             var key = _.randomString(10)
             state.local.proposalsInterestedIn[p.key] = true
@@ -63,9 +63,9 @@ function drawProposal(p) {
             fb.child('public/proposals/' + p.key + '/' + key).set(true)
         }))
     }
-    dd.append($('<span style="margin:15px"/>').text(_.values(get(state, 'fb', 'proposals', p.key)).length + ' interested so far'))
+    dd.append($('<span style="margin-right:15px"/>').text(_.values(get(state, 'fb', 'proposals', p.key)).length + ' interested so far'))
     if (state.local.proposalsInterestedIn[p.key]) {
-        dd.append($('<span style="margin:15px"/>').html('<b>including you!</b>'))
+        dd.append($('<span/>').html('<b>including you!</b>'))
     }
     return d
 }
