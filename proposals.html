@@ -15,11 +15,13 @@ var state = {
     proposals : [
         {
             key : 'kfhfygmciwoslkd',
+            needed : 20,
             title : 'imitation selfie game',
             text : "When you load the game, it shows you a picture to imitate, like a character in a movie making a funny expression. Then you use a simple interface to upload a selfie imitating the picture, after which you get to see other people's selfies.\nI'm thinking it would provide a new image to imitate every minute. If it is popular enough, the interface for viewing other people's selfies can also double as a voting interface so that the community can find the best selfies."
         },
         {
             key : 'mnccyfhffjhijkh',
+            needed : 20,
             title : 'liar game',
             text : "You see videos of people telling the truth and lying, and you try to guess which is which, getting a score of how good you are at detecting lying. You can also upload a truth and lie video, and see how good you are at lying.\nTo ensure that people really are telling the truth or lying, the video could involve the person saying what is printed on a piece of paper that is held in the video, and then revealing the paper (of course, people wouldn't see that part until they made a guess about whether the video was a lie)."
         }
@@ -52,6 +54,7 @@ function drawProposal(p) {
     })
     var dd = $('<div style="margin-top:15px"/>')
     d.append(dd)
+    dd.append($('<div/>').text("I'm willing to do this if " + p.needed + " people are interested."))
     if (!state.local.proposalsInterestedIn[p.key]) {
         var email = $('<input placeholder="your@email.com" type="text"/>')
         dd.append(email).append($('<button style="margin-right:15px"/>').text("I'm interested!").click(function () {
@@ -63,9 +66,9 @@ function drawProposal(p) {
             fb.child('public/proposals/' + p.key + '/' + key).set(true)
         }))
     }
-    dd.append($('<span style="margin-right:15px"/>').text(_.values(get(state, 'fb', 'proposals', p.key)).length + ' interested so far'))
+    dd.append($('<span style="margin-right:15px"/>').text(_.values(get(state, 'fb', 'proposals', p.key)).length + '/' + p.needed + ' interested so far'))
     if (state.local.proposalsInterestedIn[p.key]) {
-        dd.append($('<span/>').html('<b>including you!</b>'))
+        dd.append($('<span style="margin-right:15px"/>').html('<b>including you!</b>'))
     }
     return d
 }
