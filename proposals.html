@@ -66,7 +66,7 @@ function drawProposal(p) {
             fb.child('public/proposals/' + p.key + '/' + key).set(true)
         }))
     }
-    dd.append($('<span style="margin-right:15px"/>').text(_.values(get(state, 'fb', 'proposals', p.key)).length + '/' + p.needed + ' interested so far'))
+    dd.append($('<span style="margin-right:15px"/>').text(_.values(get(state, 'fb', 'proposals', p.key)).length + ' interested so far'))
     if (state.local.proposalsInterestedIn[p.key]) {
         dd.append($('<span style="margin-right:15px"/>').html('<b>including you!</b>'))
     }
