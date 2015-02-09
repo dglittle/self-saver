@@ -97,7 +97,7 @@ function redrawEverything() {
 }
 
 $(function () {
-    console.log('version 4')
+    console.log('version 5')
     $('body').css('margin', '0px')
     
     loadLocal()
@@ -110,7 +110,9 @@ $(function () {
     fb.child('public').on('value', function (x) {
         state.fb = x.val()
         state.hereNow = _.values(get(state, 'fb', 'hereNow')).length
-        redrawEverything()
+        if ($(document.activeElement).prop("tagName") != 'INPUT') {
+            redrawEverything()
+        }
     })
 })
 
