@@ -33,7 +33,7 @@ $(function () {
     function getQuestionScore(q) {
         return _.values(q.yes).length + _.values(q.no).length        
     }
-    function addQuestion(q, key) {
+    function addQuestion(q) {
         var d = $('<div style="margin-top:10px"/>')
 
         var score = getQuestionScore(q)
@@ -41,10 +41,10 @@ $(function () {
         
         if (!get(q, 'yes', user) && !get(q, 'no', user)) {
             d.append($('<button style="width:20px;background:lightgrey;border:1px solid black"/>').text('+').click(function () {
-                fb.child('questions/' + key + '/yes/' + user).set(true)
+                fb.child('questions/' + q.key + '/yes/' + user).set(true)
             }))
             d.append($('<button style="margin-right:10px;width:20px;background:lightgrey;border:1px solid black"/>').text('-').click(function () {
-                fb.child('questions/' + key + '/no/' + user).set(true)
+                fb.child('questions/' + q.key + '/no/' + user).set(true)
             }))
         }
         
@@ -77,10 +77,12 @@ $(function () {
     fb = new Firebase('https://mytalkshow.firebaseio.com/')
     fb.child('questions').on('value', function (x) {
         x = x.val()
+        _.each(x, function (x, key) { x.key = key })
         x = _.sort(_.values(x), getQuestionScore, true)
+        
         questions.empty()
-        _.each(x, function (x, key) {
-            addQuestion(x, key)
+        _.each(x, function (x) {
+            addQuestion(x)
         })
     })
 })
