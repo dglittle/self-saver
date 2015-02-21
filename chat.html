@@ -1,0 +1,59 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, user-scalable=no">
+<style>
+
+body {
+    margin: 0px;
+}
+table {
+    border-collapse: collapse;
+}
+th, td {
+    padding: 0px;
+}
+
+</style>
+</head>
+<body>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src='https://cdn.firebase.com/js/client/2.0.4/firebase.js'></script>
+<script src="http://dglittle.github.io/gl519/index.js"></script>
+<script>
+
+$(function () {
+    var d = $('<div style="width:100%;height:100%;display:flex;flex-direction:column"/>')
+    
+    var messages = $('<div style="flex:1;background:red;overflow:auto"/>')
+    function addMessage(text, name) {
+        messages.append($('<div/>').append($('<b/>').text(name + ': ')).append($('<span/>').text(text)))
+        message.scrollTop(messages.prop("scrollHeight"))
+    }
+    d.append(messages)
+
+    var dd = $('<div style="display:flex;flex-direction:row"/>')
+    var input = $('<input type="text" style="flex:1">')
+    var name = $('<input type="text" style="flex:1">').val(_.sample(['red', 'orange', 'yellow', 'green', 'blue', 'purple']) + ' leader ' + (_.randomIndex(10) + 1))
+    var send = $('<button style=""/>').text('send').click(function () {
+        fb.child('messages').push({
+            text : input.val(),
+            name : name.val(),
+            time : _.time()
+        })
+    })
+    dd.append(input).append($('<div style=""/>').text('as')).append(name).append(send)
+    d.append(dd)
+    
+    $('body').append(d)
+
+    room = _.getUrlParams().room || 'default'
+    fb = new Firebase('https://mychatthing.firebaseio.com/' + room)
+    fb.child('messages').orderByChild('time').limitToLast(100).on('child_added', function (x) {
+        x = x.val()
+        addMessage(x.text, x.name)
+    })
+})
+
+</script>
+</body>
+</html>
