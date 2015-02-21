@@ -37,7 +37,7 @@ $(function () {
         var d = $('<div style="margin-top:10px"/>')
 
         var score = getQuestionScore(q)
-        d.append($('<span style="margin-right:10px"/>').text(score))
+        d.append($('<span style="margin-right:10px;color:lightgrey"/>').text(score))
         
         if (!get(q, 'yes', user) && !get(q, 'no', user)) {
             d.append($('<button style="width:20px;background:lightgrey;border:1px solid black"/>').text('+').click(function () {
