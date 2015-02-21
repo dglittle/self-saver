@@ -31,7 +31,7 @@ $(function () {
     
     var questions = $('<div style="flex:1;overflow:auto;padding-bottom:10px"/>')
     function getQuestionScore(q) {
-        return _.values(q.yes).length + _.values(q.no).length        
+        return _.values(q.yes).length - _.values(q.no).length        
     }
     function addQuestion(q) {
         var d = $('<div style="margin-top:10px"/>')
