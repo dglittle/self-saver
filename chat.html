@@ -40,6 +40,7 @@ $(function () {
             name : name.val(),
             time : _.time()
         })
+        input.val('')
     }
     var send = $('<button style="margin-left:10px"/>').text('send').click(sendMessage)
     dd.append($('<div style="margin-right:10px"/>').text('say')).append(input).append($('<div style="margin-left:10px;margin-right:10px"/>').text('as')).append(name).append(send)
