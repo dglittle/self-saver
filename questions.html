@@ -53,7 +53,7 @@ $(function () {
         fb.child('questions').push({
             text : input.val(),
             time : _.time(),
-            yes : { user : true },
+            yes : _.object([[user, true]]),
             no : {}
         })
         input.val('')
