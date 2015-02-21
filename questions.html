@@ -78,8 +78,15 @@ $(function () {
     fb.child('questions').on('value', function (x) {
         x = x.val()
         _.each(x, function (x, key) { x.key = key })
-        x = _.sort(_.values(x), getQuestionScore, true)
-        
+        x = _.values(x)
+        x.sort(function (a, b) {
+            var qsa = getQuestionScore(a)
+            var qsb = getQuestionScore(b)
+            if (qsa < qsb) return -1
+            if (qsa > qsb) return 1
+            return a.time - b.time
+        })
+
         questions.empty()
         _.each(x, function (x) {
             addQuestion(x)
