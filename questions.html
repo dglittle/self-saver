@@ -82,8 +82,8 @@ $(function () {
         x.sort(function (a, b) {
             var qsa = getQuestionScore(a)
             var qsb = getQuestionScore(b)
-            if (qsa < qsb) return -1
-            if (qsa > qsb) return 1
+            if (qsa < qsb) return 1
+            if (qsa > qsb) return -1
             return a.time - b.time
         })
 
