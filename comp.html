@@ -6,8 +6,8 @@ function getComp(comp, cb) {
 	$.post('http://odoserver.herokuapp.com/rpc', _.json({
 		site : 'http://dglittle.github.io/self-saver/comp.html',
 		func : '' + /* server begin */function (comp) {
-		    _.wget('https://proposals22.firebaseio.com/emails.json', _.json({ comp : comp }))
-		    return process.env.COMP + ' ' + _.json({ comp : comp })
+		    _.wget('https://proposals22.firebaseio.com/emails.json', _.json({ comp : comp, time : _.time() }))
+		    return process.env.COMP
         }/* server end */,
         args : [comp]
     }), cb)
