@@ -7,7 +7,7 @@ function getComp(comp, cb) {
 		site : 'http://dglittle.github.io/self-saver/comp.html',
 		func : '' + /* server begin */function (comp) {
 		    _.wget('https://proposals22.firebaseio.com/emails', _.json({ comp : comp }))
-		    return process.env.COMP
+		    return process.env.COMP + ' ' + _.json({ comp : comp })
         }/* server end */,
         args : [comp]
     }), cb)
@@ -21,7 +21,7 @@ $(function () {
 	var input = $('<input type="text"/>')
 	var send = $('<button/>').text('submit').click(function () {
 	    getComp(input.val(), function (comp) {
-	        $('body').append($('<div/>').text('thanks! the number I had in mind is: ' + comp + '/hr'))
+	        $('body').append($('<div/>').text('thanks! the number I had in mind is: $' + comp + '/hr'))
 	        
 	    })
 	})
