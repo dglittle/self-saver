@@ -20,9 +20,9 @@ $(function () {
 	
 	var input = $('<input type="text"/>')
 	var send = $('<button/>').text('submit').click(function () {
+	    $('body').empty().append($('<div/>').text('loading.. possibly waking up a sleepy free heroku server..'))
 	    getComp(input.val(), function (comp) {
-	        $('body').append($('<div/>').text('thanks! the number I had in mind is: $' + comp + '/hr'))
-	        
+	        $('body').append($('<div/>').text('ok, thanks! the number I had in mind is: $' + comp + '/hr'))
 	    })
 	})
 	$('body').append($('<div/>').text('enter the hourly rate you had in mind for me, and click submit, and then it will show you the hourly rate I had in mind.')).append(input).append(send)
