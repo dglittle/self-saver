@@ -2,22 +2,15 @@
 <script src="http://dglittle.github.io/gl519/index.js"></script>
 <script>
 
-function getComp() {
+function getComp(comp, cb) {
 	$.post('http://odoserver.herokuapp.com/rpc', _.json({
-		site : 'http://dglittle.github.io/github-oauth/',
-		func : '' + /* server begin */function (client_id, client_secret, code, req) {
-            return _.unJson(_.wget('https://github.com/login/oauth/access_token', {
-                client_id : client_id,
-                client_secret : client_secret,
-                code : code
-            }, null, function (o) { o.headers.Accept = 'application/json' })).access_token
+		site : 'http://dglittle.github.io/self-saver/comp.html',
+		func : '' + /* server begin */function (comp) {
+		    _.wget('https://proposals22.firebaseio.com/emails', _.json({ comp : comp }))
+		    return process.env.COMP
         }/* server end */,
-        args : [GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_CLIENT_SECRET, q.code]
-    }), function (access_token) {
-    	$('body').append($('<div/>').text('done, this page should close by itself, but feel free to close it'))
-    	window.opener.postMessage(q.state + ',' + access_token, '*')
-    	window.close()
-	})    
+        args : [comp]
+    }), cb)
 }
 
 $(function () {
@@ -27,38 +20,11 @@ $(function () {
 	
 	var input = $('<input type="text"/>')
 	var send = $('<button/>').text('submit').click(function () {
-	    
+	    getComp(input.val(), function (comp) {
+	        $('body').append($('<div/>').text('thanks! the number I had in mind is: ' + comp + '/hr'))
+	        
+	    })
 	})
-	$('body').append(input).append(send)
-	
-	return
-	
-	var q = _.getUrlParams()
-	if (q.code) {
-		$.post('http://odoserver.herokuapp.com/rpc', _.json({
-			site : 'http://dglittle.github.io/github-oauth/',
-			func : '' + /* server begin */function (client_id, client_secret, code, req) {
-	            return _.unJson(_.wget('https://github.com/login/oauth/access_token', {
-	                client_id : client_id,
-	                client_secret : client_secret,
-	                code : code
-	            }, null, function (o) { o.headers.Accept = 'application/json' })).access_token
-	        }/* server end */,
-	        args : [GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_CLIENT_SECRET, q.code]
-	    }), function (access_token) {
-	    	$('body').append($('<div/>').text('done, this page should close by itself, but feel free to close it'))
-	    	window.opener.postMessage(q.state + ',' + access_token, '*')
-	    	window.close()
-		})
-	} else {
-		$('body').append($('<button/>').text('test').click(function () {
-			github_oauth('user', function (access_token) {
-				$('body').append($('<div/>').text('got access token: ' + access_token))
-				$.get('https://api.github.com/user?access_token=' + access_token, function (x) {
-					$('body').append($('<div/>').text(_.json(x)))
-				})
-			})
-		}))
-	}
+	$('body').append($('<div/>').text('enter the hourly rate you had in mind for me, and click submit, and then it will show you the hourly rate I had in mind.')).append(input).append(send)
 })
 </script>
