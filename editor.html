@@ -26,7 +26,10 @@ th, td {
 <script src="http://cdn.jsdelivr.net/ace/1.1.8/min/ace.js"></script>
 <script src="http://cdn.jsdelivr.net/ace/1.1.8/min/ext-language_tools.js"></script>
 <script>
-    
+
+function base64encode(x) { return Base64.encode(Utf8.encode(x)) }
+function base64decode(x) { return Utf8.decode(Base64.decode(x)) }
+
 var db = {}
 
 function ensureAccessToken(cb) {
@@ -40,7 +43,7 @@ function ensureAccessToken(cb) {
 function openFile(cb) {
     $.get('https://api.github.com/repos/' + db.user + '/' + db.repo + '/contents/' + db.path, function (x) {
         db.sha = x.sha
-        db.text = Base64.decode(x.content.replace(/\s/g, ''))
+        db.text = base64decode(x.content.replace(/\s/g, ''))
         cb()
     }).fail(function () {
         db.text = ''
@@ -57,7 +60,7 @@ function saveFile(cb) {
             data : _.json({
                 path : '/' + db.path,
                 message : 'my commit message',
-                content : Base64.encode(db.text),
+                content : base64encode(db.text),
                 sha : db.sha
             }),
             success : function (x) {
@@ -102,7 +105,7 @@ function main() {
 
     var reloadButton = $('<button/>').text('reload (ctrl-enter)').click(function () {
         if ($('#useDataUrl:checked').length) {
-            bottomRight.empty().append($('<iframe style="width:100%;height:100%" frameBorder="0"/>').attr('src', 'data:text/html;charset=UTF8;base64,' + Base64.encode(Utf8.encode(db.text))))
+            bottomRight.empty().append($('<iframe style="width:100%;height:100%" frameBorder="0"/>').attr('src', 'data:text/html;charset=UTF8;base64,' + base64encode(db.text)))
         } else {
             bottomRight.empty().append('saving...')
             saveFile(function () {
