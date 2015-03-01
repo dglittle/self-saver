@@ -139,11 +139,10 @@ function joinGame(cb) {
             if (!v) {
                 var room = _.randomString(10)
                 lobby.child(them).transaction(function (v) {
-                    if (!v) return room
-                }, function (_, __, v) {
-                    v = v.val()
-                    if (v == room) {
-                        cb(room)
+                    if (!v) return  { room : room, user : user }
+                }, function (bad, good) {
+                    if (!bad && good) {
+                        cb(room, them)
                     } else {
                         joinGame(cb)
                     }
@@ -155,21 +154,14 @@ function joinGame(cb) {
         if (!found) {
             var wait = lobby.child(user)
             wait.set(false)
-            var f = function (x) {
-                x = x.val()
-                if (x) {
-                    wait.off('value', f)
-                    clearTimeout(t)
-                    wait.set(null)
-                    cb(x)
-                }
-            }
-            wait.on('value', f)
-            var t = setTimeout(function () {
-                wait.off('value', f)
+            waitOn(wait, 2000 + Math.random() * 5000, function (x) {
                 wait.set(null)
-                joinGame(cb)
-            }, 2000 + Math.random() * 5000)
+                if (x) {
+                    cb(x.room, x.user)
+                } else {
+                    joinGame(cb)
+                }
+            })
         }
     })
 }
@@ -189,14 +181,39 @@ $(function () {
     $('body').append(D)
     redraw()
     
-    joinGame(function (room) {
-        alert('joined game: ' + room)
+    joinGame(function (room, them) {
+        console.log(user + ' joined game: ' + room + ' - ' + them)
+        
+        var seed = _.randomString(10)
+        console.log(user + ' my seed: ' + seed)
+        
+        fb.child('rooms/' + room + '/' + user + '/seed1').set(seed)
+        fb.child('rooms/' + room + '/' + them + '/seed1').on('value', function (x) {
+            x = x.val()
+            console.log(user + ' their seed: ' + x)
+        })
     })
 })
 
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
+
+function waitOn(ref, forThisLong, cb) {
+    var f = function (x) {
+        x = x.val()
+        if (x) {
+            ref.off('value', f)
+            clearTimeout(t)
+            cb(x)
+        }
+    }
+    ref.on('value', f)
+    var t = setTimeout(function () {
+        ref.off('value', f)
+        cb(null)
+    }, forThisLong)
+}
 
 function get() {
     var a = arguments
