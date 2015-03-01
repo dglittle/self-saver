@@ -17,6 +17,9 @@ var state = {
     discarded : []
 }
 
+var g = {
+}
+
 function pickCards(n, seed) {
     var usedCards = {}
     function f(a) {
@@ -34,8 +37,10 @@ function pickCards(n, seed) {
         })
     })
     
-    //Math.randomSeed(seed)
+    var oldRandom = Math.random
+    Math.randomSeed(seed)
     _.shuffle(cards)
+    Math.random = oldRandom
     return cards.slice(0, n)
 }
 
@@ -52,8 +57,8 @@ function progressGame() {
 }
 
 function drawSlot(x, y, onPlaceCardHere) {
-    var d = $('<div style="border:1px solid black;border-radius:' + D.getX(.025) + 'px;"/>')
-    D.setPos(d, x, y, .2, .2)
+    var d = $('<div style="border:1px solid black;border-radius:' + g.D.getX(.025) + 'px;"/>')
+    g.D.setPos(d, x, y, .2, .2)
     if (onPlaceCardHere) {
         d.addClass('slot')
         d[0].isIn = function (pos) {
@@ -67,11 +72,11 @@ function drawSlot(x, y, onPlaceCardHere) {
 }
 
 function drawCard(card, x, y, onRemove) {
-    var d = $('<div style="border-radius:' + D.getX(.025) + 'px;background:white"/>')
+    var d = $('<div style="border-radius:' + g.D.getX(.025) + 'px;background:white"/>')
     var draggable = card[2] != '_'
     d.css('border', '1px solid black')
     if (draggable) d.css('background', 'gold')
-    D.setPos(d, x, y, .2, .2)
+    g.D.setPos(d, x, y, .2, .2)
     var suits = { 's' : '♠', 'h' : '♥', 'd' : '♦', 'c' : '♣' }
     d.append($('<div style="font-size:150%"/>').text((card[0] == 'T' ? '10' : card[0] ) + suits[card[1]]))
     if (draggable)
@@ -83,12 +88,12 @@ function drawCard(card, x, y, onRemove) {
                     return false
                 }
             })
-            redraw()
+            g.redraw()
         })
     return d
 }
 
-function drawBoard(D) {
+function drawBoard(cb) {
     var d = $('<div/>')
     
     function drawCardHelper(card, x, y, array, index) {
@@ -99,35 +104,23 @@ function drawBoard(D) {
             d.append(drawCard(card, x * .2, y * .2, function () {
                 array[index] = null
             }))
-        
     }
-    
     _.each(state.board, function (row, y) {
         _.each(row, function (card, x) {
             drawCardHelper(card, x, y, row, x)
         })
     })
-    
     _.each(state.available, function (card, x) {
         drawCardHelper(card, x, 3, state.available, x)
     })
     
     if ((state.available.length == 5 && !_.any(state.available)) || (state.available.length == 3 && _.filter(state.available).length == 1)) {
-        var done = $('<div style="border:1px solid black;border-radius:' + D.getX(.025) + 'px;background:gold"/>').text('done1').click(function () {
-            progressGame()
-            redraw()
-        })
+        var done = $('<div style="border:1px solid black;border-radius:' + D.getX(.025) + 'px;background:gold"/>').text('done').click(cb)
         D.setPos(done, .6, .6, .4, .2)
         d.append(done)
     }
 
     return d
-}
-
-function redraw() {
-    D.empty()
-    D.css('background-color', 'green')
-    D.append(drawBoard(D))
 }
 
 function joinGame(cb) {
@@ -166,33 +159,54 @@ function joinGame(cb) {
     })
 }
 
+function setGameState(s) {
+    if (s == 'findGame') {
+        joinGame(function (room, them) {
+            state.room = room
+            state.them = them
+            setGameState('waitForSeed1')
+        })
+    }
+    if (s == 'waitForSeed1') {
+        var seed = _.randomString(10)
+        fb.child('rooms/' + state.room + '/' + user + '/seed1').set(seed)
+        waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/seed1'), 5000, function (x) {
+            if (x) {
+                state.available = pickCards(5, [seed, x].sort())
+                setGameState('placeFirstFiveCards')
+            } else {
+                setGameState('findGame')
+            }
+        })
+    }
+    if (s == 'placeFirstFiveCards') {
+        $('body').empty()
+        g.D = drawGameDiv(100/125, .07)
+        g.D.css('background-color', 'green')
+        g.redraw = function () {
+            g.D.empty().append(drawBoard(function () {
+                setGameState('placeFirstThreeCards')
+                
+            }))
+        }
+        g.redraw()
+        $('body').append(D)
+    }
+    if (s == 'placeFirstThreeCards') {
+        console.log('placeFirstThreeCards')
+    }
+}
+
 $(function () {
     console.log('version 1')
+    
+    $('<style> html { box-sizing: border-box; } *, *:before, *:after { box-sizing: inherit; } body { margin: 0px } </style>').appendTo('head')
     
     user = _.randomString(10)
     fb = new Firebase('https://myofc.firebaseio.com/')
     fb.child('lobby/' + user).onDisconnect().set(null)
-
-    state.available = pickCards(5, 222)
     
-    $('<style> html { box-sizing: border-box; } *, *:before, *:after { box-sizing: inherit; } body { margin: 0px } </style>').appendTo('head')
-
-    D = drawGameDiv(100/125, .07)
-    $('body').append(D)
-    redraw()
-    
-    joinGame(function (room, them) {
-        console.log(user + ' joined game: ' + room + ' - ' + them)
-        
-        var seed = _.randomString(10)
-        console.log(user + ' my seed: ' + seed)
-        
-        fb.child('rooms/' + room + '/' + user + '/seed1').set(seed)
-        fb.child('rooms/' + room + '/' + them + '/seed1').on('value', function (x) {
-            x = x.val()
-            console.log(user + ' their seed: ' + x)
-        })
-    })
+    setGameState('joinGame')
 })
 
 //////////////////////////////////////////////////////////
@@ -254,9 +268,9 @@ function drawGameDiv(widthOverHeight, fontSize) {
         top : '50%',
         width : w + 'px',
         height : h + 'px',
-        margin : '-' + (h/2) + 'px 0 0 -' + (w/2) + 'px'
+        margin : '-' + (h/2) + 'px 0 0 -' + (w/2) + 'px',
+        fontSize : d.getX(fontSize) + 'px'
     })
-    $('body').css('fontSize', d.getX(fontSize) + 'px')
 
     d.setPos = function (D, x, y, w, h) {
         D.css({
