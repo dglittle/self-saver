@@ -16,13 +16,28 @@ var state = {}
 var g = {}
 
 function initState() {
+    function newBoard() {
+        return [[null, null, null], [null, null, null, null, null], [null, null, null, null, null]]
+    }
     state = {
-        board : [[null, null, null], [null, null, null, null, null], [null, null, null, null, null]],
+        board : newBoard(),
         available : [],
         discarded : [],
         availableHistory : [],
-        theirBoardHistory : []
+        theirLastBoard : newBoard()
     }
+}
+
+function progressGame(seed) {
+    _.each(state.board, function (row) {
+        _.each(row, function (card, x) {
+            if (card) row[x] = card + '_'
+        })
+    })
+    _.each(state.available, function (card, x) {
+        if (card) state.discarded.push(card)
+    })
+    state.available = pickCards(state.availableHistory.length == 0 ? 5 : 3, seed)
 }
 
 function pickCards(n, seed) {
@@ -51,16 +66,35 @@ function pickCards(n, seed) {
     state.availableHistory.push(_.clone(state.available))
 }
 
-function progressGame() {
-    _.each(state.board, function (row) {
+function verifyTheirBoard(theirBoard) {
+    var good = true
+    var available = _.makeSet(state.availableHistory.slice(-1)[0])
+    _.each(state.theirLastBoard, function (row, y) {
         _.each(row, function (card, x) {
-            if (card) row[x] = card + '_'
+            card = card && card.slice(0, 2)
+            var theirCard = theirBoard[y][x] && theirBoard[y][x].slice(0, 2)
+            if (card && (!theirCard || card != theirCard)) {
+                good = false
+            }
+            if (!card && theirCard) {
+                if (!available[theirCard]) {
+                    good = false
+                } else {
+                    available[theirCard] = false
+                }
+            }
         })
     })
-    _.each(state.available, function (card, x) {
-        if (card) state.discarded.push(card)
+    var countUsed = 0
+    var countAvailable = 0
+    _.each(available, function (unused, card) {
+        if (!unused) countUsed++
+        countAvailable++
     })
-    state.available = pickCards(3, 333)
+    if (countAvailable == 3 && countUsed != 2) good = false
+    if (countAvailable == 5 && countUsed != 5) good = false
+    state.theirLastBoard = theirBoard
+    return good
 }
 
 function drawSlot(x, y, onPlaceCardHere) {
@@ -166,23 +200,25 @@ function joinGame(cb) {
     })
 }
 
-function setGameState(s) {
+function setGameState(s, n) {
     if (s == 'findGame') {
         joinGame(function (room, them) {
             state.room = room
             state.them = them
-            setGameState('waitForSeed1')
+            setGameState('waitForSeed', n)
         })
     }
-    if (s == 'waitForSeed1') {
-        console.log('got here??')
-        
+    if (s == 'waitForSeed') {
         var seed = _.randomString(10)
-        fb.child('rooms/' + state.room + '/' + user + '/seed1').set(seed)
-        waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/seed1'), 5000, function (x) {
+        fb.child('rooms/' + state.room + '/' + user + '/seed' + n).set(seed)
+        waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/seed' + n), 5000, function (x) {
             if (x) {
-                initState()
-                pickCards(5, [seed, x].sort().join(','))
+                if (n == 1) {
+                    initState()
+                    pickCards(5, [seed, x].sort().join(','))
+                } else {
+                    progressGame() work here
+                }
                 setGameState('placeCards1')
             } else {
                 setGameState('findGame')
@@ -203,7 +239,7 @@ function setGameState(s) {
         $('body').append(g.D)
     }
     if (s == 'waitForHash1') {
-        var hash = md5(_.json(state))
+        var hash = md5(_.json(state.board))
         fb.child('rooms/' + state.room + '/' + user + '/hash1').set(hash)
         waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/hash1'), state.time + 20000 - _.time(), function (x) {
             if (x) {
@@ -219,28 +255,15 @@ function setGameState(s) {
         fb.child('rooms/' + state.room + '/' + user + '/verify1').set(verify)
         waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/verify1'), 5000, function (x) {
             if (x && md5(x) == g.theirHash1) {
-                work here
-                
-                
-                g.theirHash1 = x
-                setGameState('waitForVerify1')
+                if (verifyTheirBoard(_.unJson(x))) {
+                    setGameState('waitForSeed2')
+                } else {
+                    setGameState('findGame')
+                }
             } else {
                 setGameState('findGame')
             }
         })
-    }
-    if (s == 'placeFirstThreeCards') {
-        $('body').empty()
-        g.D = drawGameDiv(100/125, .07)
-        g.D.css('background-color', 'green')
-        g.redraw = function () {
-            g.D.empty().append(drawBoard(function () {
-                setGameState('placeFirstThreeCards')
-                
-            }))
-        }
-        g.redraw()
-        $('body').append(g.D)
     }
 }
 
