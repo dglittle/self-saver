@@ -143,7 +143,7 @@ function joinGame(cb) {
                 }, function (_, __, v) {
                     v = v.val()
                     if (v == room) {
-                        cb('my ' + room)
+                        cb(room)
                     } else {
                         joinGame(cb)
                     }
@@ -160,7 +160,7 @@ function joinGame(cb) {
                 if (x) {
                     wait.off('value', f)
                     wait.set(null)
-                    cb('their ' + x)
+                    cb(x)
                 }
             }
             wait.on('value', f)
@@ -168,7 +168,7 @@ function joinGame(cb) {
                 wait.off('value', f)
                 wait.set(null)
                 joinGame(cb)
-            }, 10000000 + Math.random() * 5000)
+            }, 2000 + Math.random() * 5000)
         }
     })
 }
