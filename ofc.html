@@ -141,6 +141,7 @@ function joinGame(cb) {
                 lobby.child(them).transaction(function (v) {
                     if (!v) return room
                 }, function (_, __, v) {
+                    alert('got here??')
                     if (v == room) {
                         cb('my ' + room)
                     } else {
