@@ -34,7 +34,7 @@ function pickCards(n, seed) {
         })
     })
     
-    Math.randomSeed(seed)
+    //Math.randomSeed(seed)
     _.shuffle(cards)
     return cards.slice(0, n)
 }
@@ -159,6 +159,7 @@ function joinGame(cb) {
                 x = x.val()
                 if (x) {
                     wait.off('value', f)
+                    clearTimeout(t)
                     wait.set(null)
                     cb(x)
                 }
