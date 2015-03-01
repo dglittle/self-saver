@@ -9,15 +9,20 @@
 <script src="http://dglittle.github.io/gl519/index.js"></script>
 <script src="http://dglittle.github.io/gl519/random.js"></script>
 <script src="http://dglittle.github.io/gl519/aes.js"></script>
+<script src="http://dglittle.github.io/gl519/md5.js"></script>
 <script>
 
-var state = {
-    board : [[null, null, null], [null, null, null, null, null], [null, null, null, null, null]],
-    available : [],
-    discarded : []
-}
+var state = {}
+var g = {}
 
-var g = {
+function initState() {
+    state = {
+        board : [[null, null, null], [null, null, null, null, null], [null, null, null, null, null]],
+        available : [],
+        discarded : [],
+        availableHistory : [],
+        theirBoardHistory : []
+    }
 }
 
 function pickCards(n, seed) {
@@ -41,7 +46,9 @@ function pickCards(n, seed) {
     Math.randomSeed(seed)
     _.shuffle(cards)
     Math.random = oldRandom
-    return cards.slice(0, n)
+    
+    state.available = cards.slice(0, n)
+    state.availableHistory.push(_.clone(state.available))
 }
 
 function progressGame() {
@@ -115,8 +122,8 @@ function drawBoard(cb) {
     })
     
     if ((state.available.length == 5 && !_.any(state.available)) || (state.available.length == 3 && _.filter(state.available).length == 1)) {
-        var done = $('<div style="border:1px solid black;border-radius:' + D.getX(.025) + 'px;background:gold"/>').text('done').click(cb)
-        D.setPos(done, .6, .6, .4, .2)
+        var done = $('<div style="border:1px solid black;border-radius:' + g.D.getX(.025) + 'px;background:gold"/>').text('done').click(cb)
+        g.D.setPos(done, .6, .6, .4, .2)
         d.append(done)
     }
 
@@ -168,18 +175,61 @@ function setGameState(s) {
         })
     }
     if (s == 'waitForSeed1') {
+        console.log('got here??')
+        
         var seed = _.randomString(10)
         fb.child('rooms/' + state.room + '/' + user + '/seed1').set(seed)
         waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/seed1'), 5000, function (x) {
             if (x) {
-                state.available = pickCards(5, [seed, x].sort())
-                setGameState('placeFirstFiveCards')
+                initState()
+                pickCards(5, [seed, x].sort().join(','))
+                setGameState('placeCards1')
             } else {
                 setGameState('findGame')
             }
         })
     }
-    if (s == 'placeFirstFiveCards') {
+    if (s == 'placeCards1') {
+        state.time = _.time()
+        $('body').empty()
+        g.D = drawGameDiv(100/125, .07)
+        g.D.css('background-color', 'green')
+        g.redraw = function () {
+            g.D.empty().append(drawBoard(function () {
+                setGameState('waitForHash1')
+            }))
+        }
+        g.redraw()
+        $('body').append(g.D)
+    }
+    if (s == 'waitForHash1') {
+        var hash = md5(_.json(state))
+        fb.child('rooms/' + state.room + '/' + user + '/hash1').set(hash)
+        waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/hash1'), state.time + 20000 - _.time(), function (x) {
+            if (x) {
+                g.theirHash1 = x
+                setGameState('waitForVerify1')
+            } else {
+                setGameState('findGame')
+            }
+        })
+    }
+    if (s == 'waitForVerify1') {
+        var verify = _.json(state)
+        fb.child('rooms/' + state.room + '/' + user + '/verify1').set(verify)
+        waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/verify1'), 5000, function (x) {
+            if (x && md5(x) == g.theirHash1) {
+                work here
+                
+                
+                g.theirHash1 = x
+                setGameState('waitForVerify1')
+            } else {
+                setGameState('findGame')
+            }
+        })
+    }
+    if (s == 'placeFirstThreeCards') {
         $('body').empty()
         g.D = drawGameDiv(100/125, .07)
         g.D.css('background-color', 'green')
@@ -190,10 +240,7 @@ function setGameState(s) {
             }))
         }
         g.redraw()
-        $('body').append(D)
-    }
-    if (s == 'placeFirstThreeCards') {
-        console.log('placeFirstThreeCards')
+        $('body').append(g.D)
     }
 }
 
@@ -206,7 +253,10 @@ $(function () {
     fb = new Firebase('https://myofc.firebaseio.com/')
     fb.child('lobby/' + user).onDisconnect().set(null)
     
-    setGameState('joinGame')
+    // work here
+    setTimeout(function () {
+        setGameState('findGame')
+    }, Math.random() * 2000)
 })
 
 //////////////////////////////////////////////////////////
@@ -215,12 +265,14 @@ $(function () {
 
 function waitOn(ref, forThisLong, cb) {
     var f = function (x) {
-        x = x.val()
-        if (x) {
-            ref.off('value', f)
-            clearTimeout(t)
-            cb(x)
-        }
+        setTimeout(function () {
+            x = x.val()
+            if (x) {
+                ref.off('value', f)
+                clearTimeout(t)
+                cb(x)
+            }
+        }, 0)
     }
     ref.on('value', f)
     var t = setTimeout(function () {
