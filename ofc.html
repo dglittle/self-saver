@@ -7,27 +7,187 @@
 <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
 <script src='https://cdn.firebase.com/js/client/2.0.4/firebase.js'></script>
 <script src="http://dglittle.github.io/gl519/index.js"></script>
+<script src="http://dglittle.github.io/gl519/random.js"></script>
 <script src="http://dglittle.github.io/gl519/aes.js"></script>
 <script>
+
+var state = {
+    board : [[null, null, null], [null, null, null, null, null], [null, null, null, null, null]],
+    available : [],
+    discarded : []
+}
+
+function pickCards(n, seed) {
+    var usedCards = {}
+    function f(a) {
+        _.each(a, function (a) { if (a) usedCards[a.slice(0, 2)] = true })
+    }
+    _.each(state.board, f)
+    f(state.available)
+    f(state.discarded)
+    
+    var cards = []
+    _.each('shcd', function (s) {
+        _.each('23456789TJQK', function (v) {
+            var card = v + s
+            if (!usedCards[card]) cards.push(card)
+        })
+    })
+    
+    Math.randomSeed(seed)
+    _.shuffle(cards)
+    return cards.slice(0, n)
+}
+
+function progressGame() {
+    _.each(state.board, function (row) {
+        _.each(row, function (card, x) {
+            if (card) row[x] = card + '_'
+        })
+    })
+    _.each(state.available, function (card, x) {
+        if (card) state.discarded.push(card)
+    })
+    state.available = pickCards(3, 333)
+}
+
+function drawSlot(x, y, onPlaceCardHere) {
+    var d = $('<div style="border:1px solid black;border-radius:' + D.getX(.025) + 'px;"/>')
+    D.setPos(d, x, y, .2, .2)
+    if (onPlaceCardHere) {
+        d.addClass('slot')
+        d[0].isIn = function (pos) {
+            var xy = getPos(d)
+            var wh = getSize(d)
+            return pos[0] > xy[0] && pos[1] > xy[1] && pos[0] < xy[0] + wh[0] && pos[1] < xy[1] + wh[1]
+        }
+        d[0].placeCardHere = onPlaceCardHere
+    }
+    return d
+}
+
+function drawCard(card, x, y, onRemove) {
+    var d = $('<div style="border-radius:' + D.getX(.025) + 'px;background:white"/>')
+    var draggable = card[2] != '_'
+    d.css('border', '1px solid black')
+    if (draggable) d.css('background', 'gold')
+    D.setPos(d, x, y, .2, .2)
+    var suits = { 's' : '♠', 'h' : '♥', 'd' : '♦', 'c' : '♣' }
+    d.append($('<div style="font-size:150%"/>').text((card[0] == 'T' ? '10' : card[0] ) + suits[card[1]]))
+    if (draggable)
+        makeDraggable(d, function (pos) {
+            _.each($('.slot').get(), function (s) {
+                if (s.isIn(pos)) {
+                    s.placeCardHere(card)
+                    onRemove()
+                    return false
+                }
+            })
+            redraw()
+        })
+    return d
+}
+
+function drawBoard(D) {
+    var d = $('<div/>')
+    
+    function drawCardHelper(card, x, y, array, index) {
+        d.append(drawSlot(x * .2, y * .2, card ? null : function (card) {
+            array[index] = card
+        }))
+        if (card)
+            d.append(drawCard(card, x * .2, y * .2, function () {
+                array[index] = null
+            }))
+        
+    }
+    
+    _.each(state.board, function (row, y) {
+        _.each(row, function (card, x) {
+            drawCardHelper(card, x, y, row, x)
+        })
+    })
+    
+    _.each(state.available, function (card, x) {
+        drawCardHelper(card, x, 3, state.available, x)
+    })
+    
+    if ((state.available.length == 5 && !_.any(state.available)) || (state.available.length == 3 && _.filter(state.available).length == 1)) {
+        var done = $('<div style="border:1px solid black;border-radius:' + D.getX(.025) + 'px;background:gold"/>').text('done1').click(function () {
+            progressGame()
+            redraw()
+        })
+        D.setPos(done, .6, .6, .4, .2)
+        d.append(done)
+    }
+
+    return d
+}
+
+function redraw() {
+    D.empty()
+    D.css('background-color', 'green')
+    D.append(drawBoard(D))
+}
+
+function joinGame(cb) {
+    var lobby = fb.child('lobby')
+    lobby.once('value', function (x) {
+        x = x.val()
+        var found = false
+        _.each(x, function (v, them) {
+            if (!v) {
+                var room = _.randomString(10)
+                lobby.child(them).transaction(function (v) {
+                    if (!v) return room
+                }, function (_, __, v) {
+                    if (v == room) {
+                        cb(room)
+                    } else {
+                        joinGame(cb)
+                    }
+                })
+                found = true
+                return false
+            }
+        })
+        if (!found) {
+            var wait = lobby.child(user)
+            wait.set(false)
+            var f = function (x) {
+                x = x.val()
+                if (x) {
+                    wait.off('value', f)
+                    cb(x)
+                }
+            }
+            wait.on('value', f)
+            var t = setTimeout(function () {
+                wait.off('value', f)
+                joinGame(cb)
+            }, 2000 + Math.random() * 5000)
+        }
+    })
+}
 
 $(function () {
     console.log('version 1')
     
-    $('body').css('margin', '0px')
+    user = _.randomString(10)
+    fb = new Firebase('https://myofc.firebaseio.com/')
+    fb.child('lobby/' + user).onDisconnect().set(null)
+
+    state.available = pickCards(5, 222)
+    
+    $('<style> html { box-sizing: border-box; } *, *:before, *:after { box-sizing: inherit; } body { margin: 0px } </style>').appendTo('head')
+
     D = drawGameDiv(100/125, .07)
     $('body').append(D)
-    D.css('background-color', 'green')
+    redraw()
     
-    D.append($('<div/>').text('hello! Q♥'))
-    
-    
-    //var a = Base64.encode('Q')
-    var a = 'Q\u2665'
-    console.log('hi1: ' + a + a.charCodeAt(1))
-    a = Base64.encode(Utf8.encode(a))
-    console.log('hi2: ' + a)
-    var b = Utf8.decode(Base64.decode(a))
-    console.log('hi3: \u2665 Q♥ ' + b)
+    joinGame(function (room) {
+        alert('joined game: ' + room)
+    })
 })
 
 //////////////////////////////////////////////////////////
@@ -51,29 +211,6 @@ $.fn.transform = function (s) {
     return this
 }
 
-function toColor(a) {
-    return 'rgb(' + _.map(a, function (x) { return Math.floor(x) }).join(',') + ')'
-}
-
-function randomColors() {
-    var colors = []
-
-    var a = [255, 128, _.lerp(0, 128, 1, 255, Math.random())]
-    _.shuffle(a)
-    colors.push(toColor(a))
-    
-    a = _.map(a, function (x) { return _.lerp(0, x, 1, 0, 1/4) })
-    colors.push(toColor(a))
-    
-    a = _.map(a, function (x) { return _.lerp(0, x, 1, 0, 1/3) })
-    colors.push(toColor(a))
-    
-    a = _.map(a, function (x) { return _.lerp(0, x, 1, 0, 1/2) })
-    colors.push(toColor(a))
-    
-    return colors
-}
-
 function drawGameDiv(widthOverHeight, fontSize) {
     var w1 = window.innerWidth
     var h1 = window.innerHeight
@@ -85,27 +222,267 @@ function drawGameDiv(widthOverHeight, fontSize) {
         var h = w / widthOverHeight
     }
 
-    var d = $('<div/>').css({
+    var d = $('<div/>')
+    
+    d.getX = function (x) { return x * w }
+    d.getY = function (y) { return y * h }
+    
+    d.css({
         position : 'absolute',
         left : '50%',
         top : '50%',
         width : w + 'px',
         height : h + 'px',
-        margin : '-' + (h/2) + 'px 0 0 -' + (w/2) + 'px',
-        fontSize : fontSize * w + 'px'
+        margin : '-' + (h/2) + 'px 0 0 -' + (w/2) + 'px'
     })
+    $('body').css('fontSize', d.getX(fontSize) + 'px')
 
-    $.fn.setPos = function (x, y, _w, _h) {
-        return this.css({
+    d.setPos = function (D, x, y, w, h) {
+        D.css({
             position : 'absolute',
-            left : x * w + 'px',
-            top : y * h + 'px',
-            width : _w * w + 'px',
-            height : _h * h + 'px'
+            left : d.getX(x) + 'px',
+            top : d.getY(y) + 'px',
+            width : d.getX(w) + 'px',
+            height : d.getY(h) + 'px'
         })
     }
 
     return d
+}
+
+function getPos(x) {
+    if ('pageX' in x) return [x.pageX, x.pageY]
+    if ('left' in x) return [x.left, x.top]
+    if ('offset' in x) return getPos(x.offset())
+    return x
+}
+
+function getSize(x) {
+    return [x.width(), x.height()]
+}
+
+function makeDraggable(d, onDrop) {
+	function setPos(d, pos) {
+		d.offset({ left : pos[0], top : pos[1] })
+	}
+	d.mousedown(function (e) {
+		e.preventDefault()
+		var pos = getPos(d)
+		var oldParent = d.parent()
+		$('body').append(d)
+		setPos(d, pos)
+		var lastMousePos = getPos(e)
+		var mousemove = function (e) {
+			var mousePos = getPos(e)
+			var delta = sub(mousePos, lastMousePos)
+			lastMousePos = mousePos
+			setPos(d, add(getPos(d), delta))
+		}
+		var mouseup = function (e) {
+			$(document).off('mousemove', mousemove).off('mouseup', mouseup)
+			pos = getPos(d)
+			oldParent.append(d)
+			setPos(d, pos)
+			onDrop(lastMousePos)
+		}
+		$(document).on('mousemove', mousemove).on('mouseup', mouseup)
+	})
+	d.on('touchstart', function (e) {
+		e = e.originalEvent
+		e.preventDefault()
+		var pos = getPos(d)
+		var oldParent = d.parent()
+		$('body').append(d)
+		setPos(d, pos)
+		var lastMousePos = getPos(e.touches[0])
+		var mousemove = function (e) {
+			e = e.originalEvent
+			e.preventDefault()
+			var mousePos = getPos(e.touches[0])
+			var delta = sub(mousePos, lastMousePos)
+			lastMousePos = mousePos
+			setPos(d, add(getPos(d), delta))
+		}
+		var mouseup = function (e) {
+			e = e.originalEvent
+			e.preventDefault()
+			$(document).off('touchmove', mousemove).off('touchend', mouseup)
+			pos = getPos(d)
+			oldParent.append(d)
+			setPos(d, pos)
+			onDrop(lastMousePos)
+		}
+		$(document).on('touchmove', mousemove).on('touchend', mouseup)
+	})
+}
+
+function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
+function isRetina() {
+    return window.devicePixelRatio > 1
+}
+
+function getWindowSize() {
+    return [window.innerWidth, window.innerHeight]
+}
+
+function createCheckBox(label, check, cb) {
+    var d = $('<span/>')
+
+    var c = $('<input type="checkbox"/>')
+    var id = _.randomString(10, /[a-z]/)
+    c.attr('id', id)
+    c.prop('checked', !!check)
+    if (cb) c.change(cb)
+    d.append(c)
+
+    if (typeof(label) == "string") label = $('<span/>').text(label)
+    d.append($('<label for="' + id + '"/>').append(label))
+
+    return d
+}
+
+function grabMouse(d, cb, onUp) {
+    d.on('mousedown', function (e) {
+        e.preventDefault()
+        cb(getRelPos(d, e))
+
+        var oldMove = document.onmousemove
+        document.onmousemove = function (e) {
+            cb(getRelPos(d, e))
+        }
+        
+        var oldUp = document.onmouseup
+        document.onmouseup = function (e) {
+            if (onUp) onUp()
+            document.onmousemove = oldMove
+            document.onmouseup = oldUp
+        }
+    })
+    d.on('touchstart', function (e) {
+        e.preventDefault()
+        cb(getRelPos(d, e.originalEvent.touches[0]))
+
+        var oldMove = document.ontouchmove
+        document.ontouchmove = function (e) {
+            e.preventDefault()
+            cb(getRelPos(d, e.touches[0]))
+        }
+
+        var oldEnd = document.ontouchend;
+        var oldCancel = document.ontouchcancel
+        document.ontouchend = document.ontouchcancel = function (e) {
+            if (onUp) onUp()
+            document.ontouchmove = oldMove
+            document.ontouchend = oldEnd
+            document.ontouchcancel = oldCancel
+        }
+    })
+}
+
+function grabMouseRelative(d, onDown, cb, onUp) {
+    var lastPos = null
+    grabMouse(d, function (pos) {
+        if (!lastPos) {
+            if (onDown) onDown(pos)
+        } else {
+            cb(sub(pos, lastPos), pos)
+        }
+        lastPos = pos
+    }, function () {
+        if (onUp) onUp(lastPos[0], lastPos[1])
+        lastPos = null
+    })
+}
+
+var tau = Math.PI * 2
+
+function zeros(n) {
+    var sum = []
+    for (var i = 0; i < n; i++)
+        sum.push(0)
+    return sum
+}
+
+function sum(x) {
+    var sum = 0
+    for (var i = 0; i < x.length; i++)
+        sum += x[i]
+    return sum
+}
+
+function op(x, y, op) {
+    var sum = []
+    var n = (x instanceof Array) ? x.length : y.length
+    for (var i = 0; i < n; i++) {
+        sum.push(op(
+            (x instanceof Array) ? x[i] : x,
+            (y instanceof Array) ? y[i] : y))
+    }
+    return sum
+}
+
+function sub(x, y) {
+    return op(x, y, function (x, y) { return x - y })
+}
+
+function add(x, y) {
+    return op(x, y, function (x, y) { return x + y })
+}
+
+function mul(x, y) {
+    return op(x, y, function (x, y) { return x * y })
+}
+
+function div(x, y) {
+    return op(x, y, function (x, y) { return x / y })
+}
+
+function dot(x, y) {
+    return sum(mul(x, y))
+}
+
+function distSq(x, y) {
+    if (y !== undefined) return distSq(sub(x, y))
+    return dot(x, x)
+}
+magSq = distSq
+
+function dist(x, y) {
+    return Math.sqrt(distSq(x, y))
+}
+mag = dist
+
+function norm(x) {
+    return div(x, dist(x))
+}
+
+function matmul(a, b) {
+    var m = []
+    for (var r = 0; r < a.length; r++) {
+        m[r] = []
+        for (var c = 0; c < b[0].length; c++) {
+            m[r][c] = 0
+            for (var i = 0; i < b.length; i++) {
+                m[r][c] += a[r][i] * b[i][c]
+            }
+        }
+    }
+    return m
+}
+
+function comparator(f, desc) {
+    return function (a, b) {
+        if (f) {
+            a = f(a)
+            b = f(b)
+        }
+        if (a < b) return desc ? 1 : -1
+        if (a > b) return desc ? -1 : 1
+        return 0
+    }
 }
 
 </script>
