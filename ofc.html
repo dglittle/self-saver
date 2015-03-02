@@ -23,7 +23,7 @@ function initState() {
     state.available = []
     state.discarded = []
     state.availableHistory = []
-    state.theirLastBoard = newBoard()
+    state.theirBoard = newBoard()
 }
 
 function progressGame(seed) {
@@ -35,7 +35,10 @@ function progressGame(seed) {
     _.each(state.available, function (card, x) {
         if (card) state.discarded.push(card)
     })
-    pickCards(state.availableHistory.length == 0 ? 5 : 3, seed)
+    if (state.availableHistory.length < 5)
+        pickCards(state.availableHistory.length == 0 ? 5 : 3, seed)
+    else
+        state.available = []
 }
 
 function pickCards(n, seed) {
@@ -64,10 +67,51 @@ function pickCards(n, seed) {
     state.availableHistory.push(_.clone(state.available))
 }
 
+function placeCardsDefaulty() {
+    while (true) {
+        var desiredAvailable = state.available.length == 5 ? 0 : 1
+        var available = _.filter(state.available).length
+        if (available > desiredAvailable) {
+            var myCard = null
+            for (var i = 0; i < state.available.length; i++) {
+                myCard = state.available[i]
+                if (myCard) {
+                    state.available[i] = null
+                    break
+                }
+            }
+            _.each(state.board, function (row, y) {
+                _.each(row, function (card, x) {
+                    if (myCard && !card) {
+                        row[x] = myCard
+                        myCard = null
+                    }
+                })
+            })
+        } else if (available < desiredAvailable) {
+            var myCard = null
+            _.each(state.board, function (row, y) {
+                _.each(row, function (card, x) {
+                    if (!myCard && card && card.length == 2) {
+                        myCard = card
+                        row[x] = null
+                    }
+                })
+            })
+            for (var i = 0; i < state.available.length; i++) {
+                if (!state.available[i]) {
+                    state.available[i] = myCard
+                    break
+                }
+            }
+        } else break
+    }
+}
+
 function verifyTheirBoard(theirBoard) {
     var good = true
     var available = _.makeSet(state.availableHistory.slice(-1)[0])
-    _.each(state.theirLastBoard, function (row, y) {
+    _.each(state.theirBoard, function (row, y) {
         _.each(row, function (card, x) {
             card = card && card.slice(0, 2)
             var theirCard = theirBoard[y][x] && theirBoard[y][x].slice(0, 2)
@@ -91,13 +135,14 @@ function verifyTheirBoard(theirBoard) {
     })
     if (countAvailable == 3 && countUsed != 2) good = false
     if (countAvailable == 5 && countUsed != 5) good = false
-    state.theirLastBoard = theirBoard
+    state.theirBoard = theirBoard
     return good
 }
 
-function drawSlot(x, y, onPlaceCardHere) {
-    var d = $('<div style="border:1px solid black;border-radius:' + g.D.getX(.025) + 'px;"/>')
-    g.D.setPos(d, x, y, .2, .2)
+function drawSlot(x, y, w, h, onPlaceCardHere, scale) {
+    if (!scale) scale = 1
+    var d = $('<div style="border:1px solid black;border-radius:' + g.D.getX(.025 * scale) + 'px;"/>')
+    g.D.setPos(d, x, y, w, h)
     if (onPlaceCardHere) {
         d.addClass('slot')
         d[0].isIn = function (pos) {
@@ -110,12 +155,13 @@ function drawSlot(x, y, onPlaceCardHere) {
     return d
 }
 
-function drawCard(card, x, y, onRemove) {
-    var d = $('<div style="border-radius:' + g.D.getX(.025) + 'px;background:white"/>')
+function drawCard(card, x, y, w, h, onRemove, scale) {
+    if (!scale) scale = 1
+    var d = $('<div style="border-radius:' + g.D.getX(.025 * scale) + 'px;background:white"/>')
     var draggable = card[2] != '_'
     d.css('border', '1px solid black')
     if (draggable) d.css('background', 'gold')
-    g.D.setPos(d, x, y, .2, .2)
+    g.D.setPos(d, x, y, w, h)
     var suits = { 's' : '♠', 'h' : '♥', 'd' : '♦', 'c' : '♣' }
     d.append($('<div style="font-size:150%"/>').text((card[0] == 'T' ? '10' : card[0] ) + suits[card[1]]))
     if (draggable)
@@ -132,32 +178,73 @@ function drawCard(card, x, y, onRemove) {
     return d
 }
 
+function drawTheirBoard() {
+    var d = $('<div style="font-size:40%"/>')
+    function drawCardHelper(card, x, y) {
+        d.append(drawSlot(.6 + x * .4/5, y * .4/5, .4/5, .4/5, card ? null : function (card) {
+            array[index] = card
+        }, .4))
+        if (card)
+            d.append(drawCard(card, .6 + x * .4/5, y * .4/5, .4/5, .4/5, function () {
+                array[index] = null
+            }, .4))
+    }
+    _.each(state.theirBoard, function (row, y) {
+        _.each(row, function (card, x) {
+            drawCardHelper(card, x, y, row, x)
+        })
+    })
+    return d
+}
+
+function drawTimer(endTime) {
+    var d = $('<div/>')
+    g.D.setPos(d, 0, 0, .1, .1)
+    var f = function (override) {
+        if (override || $.contains(document.documentElement, d[0])) {
+            var t = (endTime - _.time()) / 1000
+            t = Math.floor(t)
+            d.text(t)
+            setTimeout(f, 300)
+        }
+    }
+    f(true)
+    return d
+}
+
 function drawBoard(cb) {
     var d = $('<div/>')
     
     function drawCardHelper(card, x, y, array, index) {
-        d.append(drawSlot(x * .2, y * .2, card ? null : function (card) {
+        d.append(drawSlot(x * .2, y * .2, .2, .2, card ? null : function (card) {
             array[index] = card
         }))
         if (card)
-            d.append(drawCard(card, x * .2, y * .2, function () {
+            d.append(drawCard(card, x * .2, y * .2, .2, .2, function () {
                 array[index] = null
             }))
     }
     _.each(state.board, function (row, y) {
         _.each(row, function (card, x) {
-            drawCardHelper(card, x, y, row, x)
+            drawCardHelper(card, x, y + 1, row, x)
         })
     })
     _.each(state.available, function (card, x) {
-        drawCardHelper(card, x, 3, state.available, x)
+        drawCardHelper(card, x, 4, state.available, x)
     })
 
     if ((state.available.length == 5 && !_.any(state.available)) || (state.available.length == 3 && _.filter(state.available).length == 1)) {
-        var done = $('<div style="border:1px solid black;border-radius:' + g.D.getX(.025) + 'px;background:gold"/>').text('done').click(cb)
-        g.D.setPos(done, .6, .6, .4, .2)
+        var done = $('<div class="doneButton" style="border:1px solid black;border-radius:' + g.D.getX(.025) + 'px;background:gold"/>').text('done').click(function () {
+            done.remove()
+            cb()
+        })
+        g.D.setPos(done, .6, .8, .4, .2)
         d.append(done)
     }
+    
+    d.append(drawTheirBoard())
+    if (state.available.length > 0)
+        d.append(drawTimer(state.time + 25000))
 
     return d
 }
@@ -227,9 +314,15 @@ function setGameState(s, n) {
         g.D.css('background-color', 'green')
         g.redraw = function () {
             g.D.empty().append(drawBoard(function () {
+                clearTimeout(t)
                 setGameState('waitForHash', n)
             }))
         }
+        var t = setTimeout(function () {
+            placeCardsDefaulty()
+            g.redraw()
+            g.D.find('.doneButton').click()
+        }, state.time + 25000 - _.time())
         g.redraw()
         $('body').append(g.D)
     }
@@ -239,22 +332,40 @@ function setGameState(s, n) {
         waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/hash' + n), state.time + 30000 - _.time(), function (x) {
             if (x) {
                 g.theirHash = x
-                setGameState('waitForVerify' + n)
+                setGameState('waitForVerify', n)
             } else {
                 setGameState('findGame')
             }
         })
     }
     if (s == 'waitForVerify') {
-        var verify = _.json(state)
+        var verify = _.json(state.board)
         fb.child('rooms/' + state.room + '/' + user + '/verify' + n).set(verify)
         waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/verify' + n), 5000, function (x) {
             if (x && md5(x) == g.theirHash && verifyTheirBoard(_.unJson(x))) {
-                setGameState('waitForSeed', n + 1)
+                if (n < 5)
+                    setGameState('waitForSeed', n + 1)
+                else
+                    setGameState('score')
             } else {
                 setGameState('findGame')
             }
         })
+    }
+    if (s == 'score') {
+        progressGame()
+        $('body').empty()
+        g.D = drawGameDiv(100/125, .07)
+        g.D.css('background-color', 'green')
+        g.redraw = function () {
+            g.D.empty().append(drawBoard(function () {
+                console.log('wtf?')
+            }))
+        }
+        g.redraw()
+        $('body').append(g.D)
+
+        console.log('work here')
     }
 }
 
@@ -276,6 +387,46 @@ $(function () {
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
+
+function myRankPokerHand(hand) {
+    var cs = []
+    var ss = []
+    var rankMap = {'T' : 10, 'J' : 11, 'Q' : 12, 'K' : 13, 'A' : 14}
+    for (var i = 2; i < 10; i++) rankMap[i] = i
+    for (var i = 0; i < hand.length; i++) {
+        cs.push(rankMap[hand[i][0]])
+        ss.push(hand[i][1])
+    }
+    return rankPokerHand(cs, ss)
+}
+
+// cs: array of 5 card values (14 for ace, 2 for 2)
+// ss: array of suit values (can be anything that supports the == operator)
+// adapted from: http://www.codeproject.com/Articles/569271/A-Poker-hand-analyzer-in-JavaScript-using-bit-math
+function rankPokerHand(cs, ss) {
+	var v, i, o, s = 1<<cs[0]|1<<cs[1]|1<<cs[2]|1<<cs[3]|1<<cs[4]
+	for (i=-1, v=o=0; i<5; i++, o=Math.pow(2,cs[i]*4)) v += o*((v/o&15)+1)
+	v = v % 15 - ((s/(s&-s) == 31) || (s == 0x403c) ? 3 : 1)
+	v -= (ss[0]==ss[1]&&ss[1]==ss[2]&&ss[2]==ss[3]&&ss[3]==ss[4]) * ((s == 0x7c00) ? -5 : 1)
+	v = [7, 8, 4, 5, 0, 1, 2, 9, 3, 6][v]
+
+	var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+	var bigPair = 0, littlePair = 0
+	for (i=0; i<5; i++) {
+		counts[cs[i]]++
+		if (counts[cs[i]] >= 3) bigPair = cs[i]
+	}
+	for (i=14;!bigPair&&i>=0;i--) if(counts[i]==2) bigPair=i
+	for (;!littlePair&&i>=0;i--) if(counts[i]==2) littlePair=i
+	if (s == 0x403c) s = 0x003c // ace low straight
+	s = s | (littlePair << 16) | (bigPair << 20) | (v << 24)
+	return s
+}
+
+function pokerHandName(r) {
+    var handType = r >> 24
+    return ['high card', 'one pair', 'two pairs', 'three of a kind', 'straight', 'flush', 'full house', 'four of a kind', 'straight flush', 'royal flush'][handType]
+}
 
 function waitOn(ref, forThisLong, cb) {
     var f = function (x) {
