@@ -24,6 +24,70 @@ function initState() {
     state.discarded = []
     state.availableHistory = []
     state.theirBoard = newBoard()
+    state.score = null
+}
+
+function scoreGame() {
+    state.score = {
+        total : 0,
+        theirTotal : 0,
+        rows : ['', '', ''],
+        theirRows : ['', '', '']
+    }
+    var pokerHandValues = _.map(state.board, myRankPokerHand)
+    var theirPokerHandValues = _.map(state.theirBoard, myRankPokerHand)
+    if (pokerHandValues[0] > pokerHandValues[1] || pokerHandValues[1] > pokerHandValues[2]) pokerHandValues = [0, 0, 0]
+    if (theirPokerHandValues[0] > theirPokerHandValues[1] || theirPokerHandValues[1] > theirPokerHandValues[2]) theirPokerHandValues = [0, 0, 0]
+    for (var y = 0; y < 3; y++) {
+        if (pokerHandValues[y] > theirPokerHandValues[y]) {
+            state.score.rows[y] += '+1'
+            state.score.total += 1
+            state.score.theirRows[y] += '+0'
+        } else if (pokerHandValues[y] < theirPokerHandValues[y]) {
+            state.score.rows[y] += '+0'
+            state.score.theirRows[y] += '+1'
+            state.score.theirTotal += 1
+        } else {
+            state.score.rows[y] += '+0'
+            state.score.theirRows[y] += '+0'
+        }
+    }
+    if (state.score.total == 3) {
+        state.score.total += 3
+        for (var y = 0; y < 3; y++)
+            state.score.rows[y] += '+1'
+    }
+    if (state.score.theirTotal == 3) {
+        state.score.theirTotal += 3
+        for (var y = 0; y < 3; y++)
+            state.score.theirRows[y] += '+1'
+    }
+    
+    function calcRoyalty(v, rowY) {
+        if (rowY == 0) {
+            if (v > (3 << 24)) {
+                return ((v >> 20) & 0xf) + 8
+            } else if (v > (1 << 24)) {
+                v = ((v >> 20) & 0xf)
+                if (v > 5) return v - 5
+            }
+        } else if (rowY == 1) {
+            return [0, 0, 0, 2, 4, 8, 12, 20, 30, 50][v >> 24]
+        } else if (rowY == 2) {
+            return [0, 0, 0, 0, 2, 4, 6, 10, 15, 25][v >> 24]
+        }
+        return 0
+    }
+    
+    for (var y = 0; y < 3; y++) {
+        var r = calcRoyalty(pokerHandValues[y], y)
+        state.score.rows[y] += '+' + r
+        state.score.total += r
+        
+        var r = calcRoyalty(theirPokerHandValues[y], y)
+        state.score.theirRows[y] += '+' + r
+        state.score.theirTotal += r
+    }
 }
 
 function progressGame(seed) {
@@ -178,22 +242,32 @@ function drawCard(card, x, y, w, h, onRemove, scale) {
     return d
 }
 
-function drawTheirBoard() {
-    var d = $('<div style="font-size:40%"/>')
-    function drawCardHelper(card, x, y) {
-        d.append(drawSlot(.6 + x * .4/5, y * .4/5, .4/5, .4/5, card ? null : function (card) {
+function drawBoard(board, X, Y, w, h, available, rowScores) {
+    var d = $('<div/>')
+    function drawCardHelper(card, x, y, array, index) {
+        d.append(drawSlot(X + x * w, Y + y * h, w, h, card ? null : function (card) {
             array[index] = card
-        }, .4))
+        }))
         if (card)
-            d.append(drawCard(card, .6 + x * .4/5, y * .4/5, .4/5, .4/5, function () {
+            d.append(drawCard(card, X + x * w, Y + y * h, w, h, function () {
                 array[index] = null
-            }, .4))
+            }))
     }
-    _.each(state.theirBoard, function (row, y) {
+    _.each(board, function (row, y) {
         _.each(row, function (card, x) {
-            drawCardHelper(card, x, y, row, x)
+            drawCardHelper(card, x, y + 1, row, x)
         })
+        if (rowScores) {
+            var dd = $('<div style="background:rgba(0,0,0,.5)"/>')
+            g.D.setPos(dd, X, Y + (y + 1) * h, w * (y == 0 ? 3 : 5), h)
+            dd.append($('<div style="font-size:120%;position:absolute;bottom:0px;left:0px;color:gold;"/>').text(rowScores[y]))
+            d.append(dd)
+        }
     })
+    if (available)
+        _.each(available, function (card, x) {
+            drawCardHelper(card, x, 4, state.available, x)
+        })
     return d
 }
 
@@ -212,27 +286,10 @@ function drawTimer(endTime) {
     return d
 }
 
-function drawBoard(cb) {
+function drawState(cb) {
     var d = $('<div/>')
     
-    function drawCardHelper(card, x, y, array, index) {
-        d.append(drawSlot(x * .2, y * .2, .2, .2, card ? null : function (card) {
-            array[index] = card
-        }))
-        if (card)
-            d.append(drawCard(card, x * .2, y * .2, .2, .2, function () {
-                array[index] = null
-            }))
-    }
-    _.each(state.board, function (row, y) {
-        _.each(row, function (card, x) {
-            drawCardHelper(card, x, y + 1, row, x)
-        })
-    })
-    _.each(state.available, function (card, x) {
-        drawCardHelper(card, x, 4, state.available, x)
-    })
-
+    d.append(drawBoard(state.board, 0, 0, .2, .2, state.available, state.score ? state.score.rows : null))
     if ((state.available.length == 5 && !_.any(state.available)) || (state.available.length == 3 && _.filter(state.available).length == 1)) {
         var done = $('<div class="doneButton" style="border:1px solid black;border-radius:' + g.D.getX(.025) + 'px;background:gold"/>').text('done').click(function () {
             done.remove()
@@ -241,8 +298,9 @@ function drawBoard(cb) {
         g.D.setPos(done, .6, .8, .4, .2)
         d.append(done)
     }
-    
-    d.append(drawTheirBoard())
+
+    d.append(drawBoard(state.theirBoard, .6, 0, .4/5, .4/5, null, state.score ? state.score.theirRows : null).css('font-size', '40%'))
+
     if (state.available.length > 0)
         d.append(drawTimer(state.time + 25000))
 
@@ -313,7 +371,7 @@ function setGameState(s, n) {
         g.D = drawGameDiv(100/125, .07)
         g.D.css('background-color', 'green')
         g.redraw = function () {
-            g.D.empty().append(drawBoard(function () {
+            g.D.empty().append(drawState(function () {
                 clearTimeout(t)
                 setGameState('waitForHash', n)
             }))
@@ -353,19 +411,18 @@ function setGameState(s, n) {
         })
     }
     if (s == 'score') {
+        scoreGame()
         progressGame()
         $('body').empty()
         g.D = drawGameDiv(100/125, .07)
         g.D.css('background-color', 'green')
         g.redraw = function () {
-            g.D.empty().append(drawBoard(function () {
+            g.D.empty().append(drawState(function () {
                 console.log('wtf?')
             }))
         }
         g.redraw()
         $('body').append(g.D)
-
-        console.log('work here')
     }
 }
 
@@ -377,6 +434,109 @@ $(function () {
     user = _.randomString(10)
     fb = new Firebase('https://myofc.firebaseio.com/')
     fb.child('lobby/' + user).onDisconnect().set(null)
+    
+    
+    
+    
+    state = {
+    "room": "bOMecmkAdt",
+    "them": "hocfBZgaYm",
+    "board": [
+        [
+            "8c__",
+            "Js__",
+            "2d_"
+        ],
+        [
+            "6h___",
+            "4d____",
+            "7s___",
+            "8h____",
+            "5c_"
+        ],
+        [
+            "Kd_____",
+            "3d_____",
+            "Jc_____",
+            "Jh_____",
+            "2h_____"
+        ]
+    ],
+    "available": [],
+    "discarded": [
+        "Qs",
+        "9s",
+        "7c",
+        "Kc"
+    ],
+    "availableHistory": [
+        [
+            "Kd",
+            "3d",
+            "Jc",
+            "Jh",
+            "2h"
+        ],
+        [
+            "Qs",
+            "4d",
+            "9h"
+        ],
+        [
+            "6h",
+            "7s",
+            "9s"
+        ],
+        [
+            "8c",
+            "Js",
+            "7c"
+        ],
+        [
+            "Kc",
+            "4c",
+            "2d"
+        ]
+    ],
+    "theirBoard": [
+        [
+            "4c",
+            "9s__",
+            "Js_"
+        ],
+        [
+            "Qs___",
+            "4d___",
+            "7s__",
+            "7c_",
+            "Kc"
+        ],
+        [
+            "Kd____",
+            "3d____",
+            "Jc____",
+            "Jh____",
+            "2h____"
+        ]
+    ],
+    "time": 1425280709997
+}
+    scoreGame()
+    $('body').empty()
+    g.D = drawGameDiv(100/125, .07)
+    g.D.css('background-color', 'green')
+    g.redraw = function () {
+        g.D.empty().append(drawState(function () {
+            console.log('wtf?')
+        }))
+    }
+    g.redraw()
+    $('body').append(g.D)
+    console.log(_.json(state, true))
+    return
+    
+    
+    
     
     // work here
     setTimeout(function () {
@@ -400,19 +560,26 @@ function myRankPokerHand(hand) {
     return rankPokerHand(cs, ss)
 }
 
-// cs: array of 5 card values (14 for ace, 2 for 2)
+// cs: array of 5 or 3 card values (14 for ace, 2 for 2)
 // ss: array of suit values (can be anything that supports the == operator)
 // adapted from: http://www.codeproject.com/Articles/569271/A-Poker-hand-analyzer-in-JavaScript-using-bit-math
 function rankPokerHand(cs, ss) {
-	var v, i, o, s = 1<<cs[0]|1<<cs[1]|1<<cs[2]|1<<cs[3]|1<<cs[4]
-	for (i=-1, v=o=0; i<5; i++, o=Math.pow(2,cs[i]*4)) v += o*((v/o&15)+1)
-	v = v % 15 - ((s/(s&-s) == 31) || (s == 0x403c) ? 3 : 1)
-	v -= (ss[0]==ss[1]&&ss[1]==ss[2]&&ss[2]==ss[3]&&ss[3]==ss[4]) * ((s == 0x7c00) ? -5 : 1)
-	v = [7, 8, 4, 5, 0, 1, 2, 9, 3, 6][v]
+	if (cs.length == 5) {
+		var v, i, o, s = 1<<cs[0]|1<<cs[1]|1<<cs[2]|1<<cs[3]|1<<cs[4]
+		for (i=-1, v=o=0; i<5; i++, o=Math.pow(2,cs[i]*4)) v += o*((v/o&15)+1)
+		v = v % 15 - ((s/(s&-s) == 31) || (s == 0x403c) ? 3 : 1)
+		v -= (ss[0]==ss[1]&&ss[1]==ss[2]&&ss[2]==ss[3]&&ss[3]==ss[4]) * ((s == 0x7c00) ? -5 : 1)
+		v = [7, 8, 4, 5, 0, 1, 2, 9, 3, 6][v]
+	} else if (cs.length == 3) {
+		var v, i, o, s = 1<<cs[0]|1<<cs[1]|1<<cs[2]
+		for (i=-1, v=o=0; i<3; i++, o=Math.pow(2,cs[i]*4)) v += o*((v/o&15)+1)
+		v = v % 15
+		v = v == 3 ? 0 : v == 4 ? 1 : 3
+	}
 
 	var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 	var bigPair = 0, littlePair = 0
-	for (i=0; i<5; i++) {
+	for (i=0; i<cs.length; i++) {
 		counts[cs[i]]++
 		if (counts[cs[i]] >= 3) bigPair = cs[i]
 	}
