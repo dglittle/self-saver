@@ -260,7 +260,7 @@ function drawBoard(board, X, Y, w, h, available, rowScores) {
         if (rowScores) {
             var dd = $('<div style="background:rgba(0,0,0,.5)"/>')
             g.D.setPos(dd, X, Y + (y + 1) * h, w * (y == 0 ? 3 : 5), h)
-            dd.append($('<div style="font-size:120%;position:absolute;bottom:0px;left:0px;color:gold;"/>').text(rowScores[y]))
+            dd.append($('<div style="font-size:150%;position:absolute;bottom:0px;left:0px;color:gold;"/>').text(rowScores[y]))
             d.append(dd)
         }
     })
@@ -290,7 +290,7 @@ function drawState(cb) {
     var d = $('<div/>')
     
     d.append(drawBoard(state.board, 0, 0, .2, .2, state.available, state.score ? state.score.rows : null))
-    if ((state.available.length == 5 && !_.any(state.available)) || (state.available.length == 3 && _.filter(state.available).length == 1)) {
+    if ((state.available.length == 0) || (state.available.length == 5 && !_.any(state.available)) || (state.available.length == 3 && _.filter(state.available).length == 1)) {
         var done = $('<div class="doneButton" style="border:1px solid black;border-radius:' + g.D.getX(.025) + 'px;background:gold"/>').text('done').click(function () {
             done.remove()
             cb()
@@ -303,6 +303,13 @@ function drawState(cb) {
 
     if (state.available.length > 0)
         d.append(drawTimer(state.time + 25000))
+        
+    if (state.score) {
+        var dd = $('<div/>')
+        g.D.setPos(dd, 0, .8, .6, .2)
+        dd.append($('<div style="font-size:150%;position:absolute;bottom:0px;left:0px;color:gold;"/>').text(state.score.total + ' vs ' + state.score.theirTotal + ' = ' + (state.score.total - state.score.theirTotal)))
+        d.append(dd)
+    }
 
     return d
 }
@@ -418,7 +425,7 @@ function setGameState(s, n) {
         g.D.css('background-color', 'green')
         g.redraw = function () {
             g.D.empty().append(drawState(function () {
-                console.log('wtf?')
+                setGameState('findGame')
             }))
         }
         g.redraw()
@@ -434,110 +441,7 @@ $(function () {
     user = _.randomString(10)
     fb = new Firebase('https://myofc.firebaseio.com/')
     fb.child('lobby/' + user).onDisconnect().set(null)
-    
-    
-    
-    
-    state = {
-    "room": "bOMecmkAdt",
-    "them": "hocfBZgaYm",
-    "board": [
-        [
-            "8c__",
-            "Js__",
-            "2d_"
-        ],
-        [
-            "6h___",
-            "4d____",
-            "7s___",
-            "8h____",
-            "5c_"
-        ],
-        [
-            "Kd_____",
-            "3d_____",
-            "Jc_____",
-            "Jh_____",
-            "2h_____"
-        ]
-    ],
-    "available": [],
-    "discarded": [
-        "Qs",
-        "9s",
-        "7c",
-        "Kc"
-    ],
-    "availableHistory": [
-        [
-            "Kd",
-            "3d",
-            "Jc",
-            "Jh",
-            "2h"
-        ],
-        [
-            "Qs",
-            "4d",
-            "9h"
-        ],
-        [
-            "6h",
-            "7s",
-            "9s"
-        ],
-        [
-            "8c",
-            "Js",
-            "7c"
-        ],
-        [
-            "Kc",
-            "4c",
-            "2d"
-        ]
-    ],
-    "theirBoard": [
-        [
-            "4c",
-            "9s__",
-            "Js_"
-        ],
-        [
-            "Qs___",
-            "4d___",
-            "7s__",
-            "7c_",
-            "Kc"
-        ],
-        [
-            "Kd____",
-            "3d____",
-            "Jc____",
-            "Jh____",
-            "2h____"
-        ]
-    ],
-    "time": 1425280709997
-}
-    scoreGame()
-    $('body').empty()
-    g.D = drawGameDiv(100/125, .07)
-    g.D.css('background-color', 'green')
-    g.redraw = function () {
-        g.D.empty().append(drawState(function () {
-            console.log('wtf?')
-        }))
-    }
-    g.redraw()
-    $('body').append(g.D)
-    console.log(_.json(state, true))
-    return
-    
-    
-    
-    
+
     // work here
     setTimeout(function () {
         setGameState('findGame')
