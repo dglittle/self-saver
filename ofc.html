@@ -37,7 +37,7 @@ function progressGame(seed) {
     _.each(state.available, function (card, x) {
         if (card) state.discarded.push(card)
     })
-    state.available = pickCards(state.availableHistory.length == 0 ? 5 : 3, seed)
+    pickCards(state.availableHistory.length == 0 ? 5 : 3, seed)
 }
 
 function pickCards(n, seed) {
@@ -154,7 +154,7 @@ function drawBoard(cb) {
     _.each(state.available, function (card, x) {
         drawCardHelper(card, x, 3, state.available, x)
     })
-    
+
     if ((state.available.length == 5 && !_.any(state.available)) || (state.available.length == 3 && _.filter(state.available).length == 1)) {
         var done = $('<div style="border:1px solid black;border-radius:' + g.D.getX(.025) + 'px;background:gold"/>').text('done').click(cb)
         g.D.setPos(done, .6, .6, .4, .2)
@@ -205,7 +205,7 @@ function setGameState(s, n) {
         joinGame(function (room, them) {
             state.room = room
             state.them = them
-            setGameState('waitForSeed', n)
+            setGameState('waitForSeed', 1)
         })
     }
     if (s == 'waitForSeed') {
@@ -213,53 +213,45 @@ function setGameState(s, n) {
         fb.child('rooms/' + state.room + '/' + user + '/seed' + n).set(seed)
         waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/seed' + n), 5000, function (x) {
             if (x) {
-                if (n == 1) {
-                    initState()
-                    pickCards(5, [seed, x].sort().join(','))
-                } else {
-                    progressGame() work here
-                }
-                setGameState('placeCards1')
+                if (n == 1) initState()
+                progressGame([seed, x].sort().join(','))
+                setGameState('placeCards', n)
             } else {
                 setGameState('findGame')
             }
         })
     }
-    if (s == 'placeCards1') {
+    if (s == 'placeCards') {
         state.time = _.time()
         $('body').empty()
         g.D = drawGameDiv(100/125, .07)
         g.D.css('background-color', 'green')
         g.redraw = function () {
             g.D.empty().append(drawBoard(function () {
-                setGameState('waitForHash1')
+                setGameState('waitForHash', n)
             }))
         }
         g.redraw()
         $('body').append(g.D)
     }
-    if (s == 'waitForHash1') {
+    if (s == 'waitForHash') {
         var hash = md5(_.json(state.board))
-        fb.child('rooms/' + state.room + '/' + user + '/hash1').set(hash)
-        waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/hash1'), state.time + 20000 - _.time(), function (x) {
+        fb.child('rooms/' + state.room + '/' + user + '/hash' + n).set(hash)
+        waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/hash' + n), state.time + 30000 - _.time(), function (x) {
             if (x) {
-                g.theirHash1 = x
-                setGameState('waitForVerify1')
+                g.theirHash = x
+                setGameState('waitForVerify' + n)
             } else {
                 setGameState('findGame')
             }
         })
     }
-    if (s == 'waitForVerify1') {
+    if (s == 'waitForVerify') {
         var verify = _.json(state)
-        fb.child('rooms/' + state.room + '/' + user + '/verify1').set(verify)
-        waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/verify1'), 5000, function (x) {
-            if (x && md5(x) == g.theirHash1) {
-                if (verifyTheirBoard(_.unJson(x))) {
-                    setGameState('waitForSeed2')
-                } else {
-                    setGameState('findGame')
-                }
+        fb.child('rooms/' + state.room + '/' + user + '/verify' + n).set(verify)
+        waitOn(fb.child('rooms/' + state.room + '/' + state.them + '/verify' + n), 5000, function (x) {
+            if (x && md5(x) == g.theirHash && verifyTheirBoard(_.unJson(x))) {
+                setGameState('waitForSeed', n + 1)
             } else {
                 setGameState('findGame')
             }
