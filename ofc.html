@@ -19,13 +19,11 @@ function initState() {
     function newBoard() {
         return [[null, null, null], [null, null, null, null, null], [null, null, null, null, null]]
     }
-    state = {
-        board : newBoard(),
-        available : [],
-        discarded : [],
-        availableHistory : [],
-        theirLastBoard : newBoard()
-    }
+    state.board = newBoard()
+    state.available = []
+    state.discarded = []
+    state.availableHistory = []
+    state.theirLastBoard = newBoard()
 }
 
 function progressGame(seed) {
@@ -201,6 +199,7 @@ function joinGame(cb) {
 }
 
 function setGameState(s, n) {
+    console.log(s + n)
     if (s == 'findGame') {
         joinGame(function (room, them) {
             state.room = room
