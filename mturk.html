@@ -9,7 +9,7 @@
 <script src="http://dglittle.github.io/gl519/index.js"></script>
 <script>
 
-function mturkRequest(id, secret, sandbox, params) {
+function mturkRequest(id, secret, sandbox, params, cb) {
     $.post('http://odoserver.herokuapp.com/rpc', _.json({
 		site : 'http://dglittle.github.io/self-saver/mturk.html',
 		func : '' + /* server begin */function (id, secret, sandbox, params, req) {
@@ -29,7 +29,7 @@ function mturkRequest(id, secret, sandbox, params) {
         }/* server end */,
         args : [id, secret, sandbox, params]
     }), function (x) {
-        console.log(x)
+        cb(x)
 	})
 }
 
@@ -48,18 +48,33 @@ $(function () {
             LifetimeInSeconds : 60 * 60 * 24,
             MaxAssignments : 1,
             AutoApprovalDelayInSeconds : 60 * 60,
-            Reward : '<Reward><Amount>0.02</Amount><CurrencyCode>USD</CurrencyCode></Reward>',
+            'Reward.1.Amount' : 0.02,
+            'Reward.1.CurrencyCode' : 'USD',
             Question : '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>______CHANGE_ME______</ExternalURL><FrameHeight>800</FrameHeight></ExternalQuestion>'
         }
     }
     
     var input = $('<textarea style="width:500px;height:300px"/>').val(_.json(x, true))
     $('body').append(input)
-    
+    $('body').append($('<br/>'))
     $('body').append($('<button/>').text('submit').click(function () {
         var x = _.unJson(input.val())
-        mturkRequest(x.mturk_id, x.mturk_secret, x.sandbox, x.params)
+        mturkRequest(x.mturk_id, x.mturk_secret, x.sandbox, x.params, function (x) {
+            output.val(x)
+            extraOutput.empty()
+            var m = x.match(/<HITTypeId>(.*?)<\/HITTypeId>/)
+            if (m) {
+                _.each(['www', 'workersandbox'], function (prefix) {
+                    var url = 'https://' + prefix + '.mturk.com/mturk/preview?groupId=' + m[1]
+                    extraOutput.append($('<a/>').attr('href', url).text(url)).append($('<br/>'))
+                })
+            }
+        })
     }))
+    $('body').append($('<br/>'))
+    var output = $('<textarea style="width:500px;height:100px"/>')
+    var extraOutput = $('<div/>')
+    $('body').append(output).append(extraOutput)
 })
 
 </script>
