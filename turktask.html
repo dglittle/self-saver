@@ -1,0 +1,42 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, user-scalable=no">
+</head>
+<body>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src='https://cdn.firebase.com/js/client/2.0.4/firebase.js'></script>
+<script src="http://dglittle.github.io/gl519/index.js"></script>
+<script>
+
+$(function () {
+    console.log('version 1')
+    
+    $('<style> html { box-sizing: border-box; } *, *:before, *:after { box-sizing: inherit; } body { margin: 0px } </style>').appendTo('head')
+    
+    $('body').append($('<div/>').text('Please try to come up with something that the acyronymn NDE might stand for.'))
+    $('body').append($('<div/>').text('Be creative!'))
+    
+    function drawInput(letter) {
+        var d = $('<div/>')
+        d.append($('<span style="float:left;width:20px;"/>').text(letter))
+        var i = $('<input type="text">')
+        d.append(i)
+        d.append($('<div style="clear:both"/>'))
+        return d
+    }
+    _.each('NDE', function (letter) {
+        $('body').append(drawInput(letter))
+    })
+    $('body').append($('<button style="margin-left:20px"/>').text('submit'))
+
+
+    // fb = new Firebase('https://turk.firebaseio.com/')
+})
+
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+
+</script>
+</body>
+</html>
