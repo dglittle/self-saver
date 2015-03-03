@@ -1,0 +1,67 @@
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no">
+</head>
+<body>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src='https://cdn.firebase.com/js/client/2.0.4/firebase.js'></script>
+<script src="http://dglittle.github.io/gl519/index.js"></script>
+<script>
+
+function mturkRequest(id, secret, sandbox, params) {
+    $.post('http://odoserver.herokuapp.com/rpc', _.json({
+		site : 'http://dglittle.github.io/self-saver/mturk.html',
+		func : '' + /* server begin */function (id, secret, sandbox, params, req) {
+            function sign(text, secret) {
+                return require('crypto').createHmac('sha1', secret).update(text).digest('base64')
+            }
+            if (!params) params = {}
+            _.ensure(params, 'Service', 'AWSMechanicalTurkRequester')
+            _.ensure(params, 'AWSAccessKeyId', id)
+            _.ensure(params, 'Version', '2012-03-25')
+            _.ensure(params, 'Timestamp', new Date().toISOString().replace(/\.\d+/, ''))
+            _.ensure(params, 'Signature', sign(params.Service + params.Operation + params.Timestamp, secret))
+            
+            var url = sandbox ? "https://mechanicalturk.sandbox.amazonaws.com" : "https://mechanicalturk.amazonaws.com"
+            
+            return _.wget(url, params)
+        }/* server end */,
+        args : [id, secret, sandbox, params]
+    }), function (x) {
+        console.log(x)
+	})
+}
+
+$(function () {
+    $('<style> html { box-sizing: border-box; } *, *:before, *:after { box-sizing: inherit; } body { margin: 0px } </style>').appendTo('head')
+
+    var x = {
+        mturk_id : '',
+        mturk_secret : '',
+        sandbox : true,
+        params : {
+            Operation : 'CreateHIT',
+            Title : 'Simple Task: Do Such And Such',
+            Description : 'Yup, just do it',
+            AssignmentDurationInSeconds : 60 * 60,
+            LifetimeInSeconds : 60 * 60 * 24,
+            MaxAssignments : 1,
+            AutoApprovalDelayInSeconds : 60 * 60,
+            Reward : '<Reward><Amount>0.02</Amount><CurrencyCode>USD</CurrencyCode></Reward>',
+            Question : '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>______CHANGE_ME______</ExternalURL><FrameHeight>800</FrameHeight></ExternalQuestion>'
+        }
+    }
+    
+    var input = $('<textarea style="width:500px;height:300px"/>').val(_.json(x, true))
+    $('body').append(input)
+    
+    $('body').append($('<button/>').text('submit').click(function () {
+        var x = _.unJson(input.val())
+        mturkRequest(x.mturk_id, x.mturk_secret, x.sandbox, x.params)
+    }))
+})
+
+</script>
+</body>
+</html>
