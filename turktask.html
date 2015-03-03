@@ -11,31 +11,41 @@
 $(function () {
     console.log('version 1')
     
+    var letters = 'MHD'
+    
     $('<style> html { box-sizing: border-box; } *, *:before, *:after { box-sizing: inherit; } body { margin: 0px } </style>').appendTo('head')
     
     fb = new Firebase('https://turk.firebaseio.com/')
     
-    $('body').append($('<div/>').text('Please try to come up with something that the acyronymn NDE could stand for.'))
+    var events = []
+    events.push({ time : _.time() })
+    $('body').keydown(function (e) {
+        events.push({ key : e.keyCode, time : _.time() })
+    })
+    
+    $('body').append($('<div/>').text('Please try to come up with something that the acyronymn ' + letters + ' could stand for.'))
     $('body').append($('<div/>').text('Be creative!'))
     
     function drawInput(letter) {
         var d = $('<div/>')
-        d.append($('<span style="float:left;width:20px;"/>').text(letter))
+        d.append($('<span style="float:left;width:30px;"/>').text(letter + ': '))
         var i = $('<input class="input" type="text">')
         d.append(i)
         d.append($('<div style="clear:both"/>'))
         return d
     }
-    _.each('NDE', function (letter) {
+    _.each(letters, function (letter) {
         $('body').append(drawInput(letter))
     })
-    $('body').append($('<button style="margin-left:20px"/>').text('submit').click(function () {
+    $('body').append($('<button style="margin-left:30px"/>').text('submit').click(function () {
         var params = _.getUrlParams()
-        fb.child('/respones').push({
-            workerId : params.workerId,
+        events.push({ time : _.time() })
+        fb.child('/respones' + letters).push({
+            workerId : params.workerId || 'nonturk',
             words : _.map($('.input').get(), function (i) {
                 return $(i).val()
-            })
+            }),
+            events : events
         }, function () {
             mturkSubmit()
         })
