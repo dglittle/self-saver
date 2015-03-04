@@ -8,49 +8,77 @@
 <script src="https://dglittle.github.io/gl519/index.js"></script>
 <script>
 
+var g = {}
+
+function drawMain(a, b, cb) {
+    var d = $('<div/>')
+    d.append($('<div/>').text('Which of these is a more creative acyronymn for ' + g.letters + '?'))
+    d.append($('<button style="margin:10px"/>').text(a.words.join(' ')).click(function () {
+        cb(a, b)
+    }))
+    d.append($('<button style="margin:10px"/>').text(b.words.join(' ')).click(function () {
+        cb(b, a)
+    }))
+    return d
+}
+
+function getAandB(cb) {
+    g.fb.child('/respones' + g.letters).once('value', function (x) {
+        setTimeout(function () {
+            x = x.val()
+            _.each(x, function (x, key) { x.key = key })
+            x = _.values(x)
+            var min = _.min(x, function (x) { return x.comps || 0 }).comps || 0
+            var a = _.sample(_.filter(x, function (x) { return (x.comps || 0) == min }))
+            var b = null
+            while (!b || a == b) {
+                b = _.sample(x)
+            }
+            x = _.shuffle([a, b])
+            cb(x[0], x[1])
+        }, 0)
+    })
+}
+
 $(function () {
     console.log('version 1')
+    $('head').append($('<style> html { box-sizing: border-box; } *, *:before, *:after { box-sizing: inherit; } body { margin: 0px } </style>'))
     
-    var letters = 'MHD'
+    g.letters = 'MHD'
+    g.fb = new Firebase('https://turk.firebaseio.com/')
     
-    $('<style> html { box-sizing: border-box; } *, *:before, *:after { box-sizing: inherit; } body { margin: 0px } </style>').appendTo('head')
+    var params = _.getUrlParams()
     
-    fb = new Firebase('https://turk.firebaseio.com/')
-    fb.child('/respones' + letters).once('value', function (x) {
-        x = x.val()
-        
-        
+    $('body').append($('<div/>').text('loading...'))
+    getAandB(function (a, b) {
+        var beginTime = _.time()
+        $('body').find('div').remove()
+        $('body').append(drawMain(a, b, function (winner, loser) {
+            var endTime = _.time()
+            var count = 0
+            var f = function () {
+                count++
+                if (count == 3) {
+                    console.log('done!')
+                    $('body').empty().append($('<div/>').text('thanks!'))
+                    mturkSubmit()
+                }
+            }
+            g.fb.child('/votes' + g.letters).push({
+                winner : winner.key,
+                loser : loser.key,
+                workerId : params.workerId || 'nonturk',
+                time : _.time(),
+                duration : endTime - beginTime
+            }, f)
+            g.fb.child('/respones' + g.letters + '/' + winner.key + '/comps').transaction(function (x) {
+                return (x || 0) + 1
+            }, f)
+            g.fb.child('/respones' + g.letters + '/' + loser.key + '/comps').transaction(function (x) {
+                return (x || 0) + 1
+            }, f)
+        }))
     })
-    
-
-    $('body').append($('<div/>').text('Which of these is a more creative acyronymn for ' + letters + '?'))
-    
-    
-
-    function drawInput(letter) {
-        var d = $('<div/>')
-        d.append($('<span style="float:left;width:30px;"/>').text(letter + ': '))
-        var i = $('<input class="input" type="text">')
-        d.append(i)
-        d.append($('<div style="clear:both"/>'))
-        return d
-    }
-    _.each(letters, function (letter) {
-        $('body').append(drawInput(letter))
-    })
-    $('body').append($('<button style="margin-left:30px"/>').text('submit').click(function () {
-        var params = _.getUrlParams()
-        events.push({ time : _.time() })
-        fb.child('/respones' + letters).push({
-            workerId : params.workerId || 'nonturk',
-            words : _.map($('.input').get(), function (i) {
-                return $(i).val()
-            }),
-            events : events
-        }, function () {
-            mturkSubmit()
-        })
-    }))
     
     mturkCheckPreview()
 })
