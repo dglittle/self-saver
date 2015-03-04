@@ -49,10 +49,10 @@ $(function () {
     
     var params = _.getUrlParams()
     
-    $('body').append($('<div/>').text('loading...'))
+    $('body').append($('<div class="loading" />').text('loading...'))
     getAandB(function (a, b) {
         var beginTime = _.time()
-        $('body').find('div').remove()
+        $('body').find('.loading').remove()
         $('body').append(drawMain(a, b, function (winner, loser) {
             var endTime = _.time()
             var count = 0
@@ -78,7 +78,6 @@ $(function () {
                 return (x || 0) + 1
             }, f)
         }))
-        mturkCheckPreview()
     })
     mturkCheckPreview()
 })
