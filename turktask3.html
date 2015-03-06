@@ -74,7 +74,7 @@ function drawChoose2(cb) {
     })
     
     d.append($('<br/>'))
-    d.append($('<button/>').text('next ->').click(function () {
+    d.append($('<button/>').text('submit').click(function () {
         var x = _.map(d.find('input:checked').get(), function (x) { return $(x).val() })
         if (x.length != 2) {
             alert('please check exactly 2 best acronyms')
@@ -111,6 +111,7 @@ $(function () {
                 time : _.time(),
                 duration : endTime - beginTime
             }, function () {
+                D.empty().append($('<div/>').text('thanks!'))
                 mturkSubmit()
             })
         }))
