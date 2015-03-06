@@ -1,0 +1,170 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, user-scalable=no">
+</head>
+<body>
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src='https://cdn.firebase.com/js/client/2.0.4/firebase.js'></script>
+<script src="https://dglittle.github.io/gl519/index.js"></script>
+<script>
+
+var g = {}
+
+var letters = 'HNS'
+
+function drawSentence(cb) {
+    var d = $('<div/>')
+    d.append($('<div/>').text('Part 1 of 2'))
+    d.append($('<div style="margin-top:10px"/>').text('Please write a 4-word sentence beginning with the letter \'I\''))
+    d.append($('<input type="type" style="width:300px">'))
+    d.append($('<br/>'))
+    d.append($('<button style="margin-top:10px"/>').text('next ->').click(function () {
+        cb(d.find('input').val())
+    }))
+    return d
+}
+
+function drawBackronymn(cb) {
+    var d = $('<div/>')
+    d.append($('<div/>').text('Part 1 of 2'))
+    d.append($('<div style="margin-top:10px"/>').text('Please try to come up with something that the acyronymn ' + letters + ' could stand for.'))
+
+    function drawInput(letter) {
+        var d = $('<div/>')
+        d.append($('<span style="float:left;width:30px;"/>').text(letter + ': '))
+        d.append($('<input class="input" type="text">'))
+        d.append($('<div style="clear:both"/>'))
+        return d
+    }
+    _.each(letters, function (letter) {
+        d.append(drawInput(letter))
+    })
+    
+    d.append($('<br/>'))
+    d.append($('<button/>').text('next ->').click(function () {
+        var words = _.map(d.find('input').get(), function (x) { return $(x).val() }).join(' ')
+        cb(words)
+    }))
+    
+    return d
+}
+
+function drawChoose2(cb) {
+    var d = $('<div/>')
+    d.append($('<div/>').text('Part 2 of 2'))
+    d.append($('<div style="margin-top:10px"/>').text('Check the best 2 acronyms for ' + letters))
+
+    function drawCheck(words) {
+        var d = $('<div/>')
+        d.append($('<label><input type="checkbox" value="' + words + '"/>' + words + '</label>'))
+        return d
+    }
+    
+    var acronyms = [
+        "Heroes Never Surrender",
+        "Has No Sound",
+        "Her Nature Security",
+        "Homuncoli Neutered Sweden",
+        "Honering November Spaghetti"
+    ]
+    acronyms = _.shuffle(acronyms)
+
+    _.each(acronyms, function (words) {
+        d.append(drawCheck(words))
+    })
+    
+    d.append($('<br/>'))
+    d.append($('<button/>').text('next ->').click(function () {
+        var x = _.map(d.find('input:checked').get(), function (x) { return $(x).val() })
+        if (x.length != 2) {
+            alert('please check exactly 2 best acronyms')
+        } else {
+            cb(x)
+        }
+    }))
+    
+    return d
+}
+
+$(function () {
+    console.log('version 1')
+    $('head').append($('<style> html { box-sizing: border-box; } *, *:before, *:after { box-sizing: inherit; } body { margin: 0px } </style>'))
+    D = $('<div/>')
+    $('body').append(D)
+    fb = new Firebase('https://turk.firebaseio.com/')
+
+    var which = Math.random() < .5 ? 1 : 2   
+    try {
+        if (localStorage.turktask3) which = localStorage.turktask3
+        localStorage.turktask3 = which
+    } catch (e) {}
+    
+    function f(prep) {
+        var beginTime = _.time()
+        D.empty().append(drawChoose2(function (x) {
+            var endTime = _.time()
+            var params = _.getUrlParams()
+            fb.child('/turktask3').push({
+                workerId : params.workerId || 'nonturk',
+                prep : prep,
+                choices : x,
+                time : _.time(),
+                duration : endTime - beginTime
+            }, function () {
+                mturkSubmit()
+            })
+        }))
+    }
+    var beginTime = _.time()
+    if (which == 1) {
+        D.append(drawSentence(function (x) {
+            f({
+                type : 'sentence',
+                text : x,
+                duration : _.time() - beginTime
+            })
+        }))
+    } else {
+        D.append(drawBackronymn(function (x) {
+            f({
+                type : 'backronym',
+                text : x,
+                duration : _.time() - beginTime
+            })
+        }))
+    }
+    
+    mturkCheckPreview()
+})
+
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+
+function mturkSubmit() {
+    if (!isHIT()) return
+    var params = _.getUrlParams()
+    var f = $('<form action="' + params.turkSubmitTo + '/mturk/externalSubmit" method="POST"><input type="hidden" name="assignmentId" value="' + params.assignmentId + '"></input><input type="hidden" name="unused" value="unused"></input></form>')
+    $('body').append(f)
+    f.submit()
+}
+
+function mturkCheckPreview() {
+    var params = _.getUrlParams()
+    if (params.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
+        _.dialog($('<div style="background-color: rgba(0,0,0,0.5);color:white;font-size:xx-large;padding:10px"/>').text('preview'), false)
+        $('body').click(function () {
+            alert('This is a preview. Please accept the HIT to work on it.')
+        })
+        return true
+    }
+}
+
+function isHIT() {
+    var params = _.getUrlParams()
+    return !!params.assignmentId
+}
+
+</script>
+</body>
+</html>
