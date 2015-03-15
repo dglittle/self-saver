@@ -23,10 +23,11 @@ th, td {
 <script>
 
 $(function () {
-    $('body').append($('<div class="hi"/>').text('hello3!')).mousedown(function (e) {
-        $('.hi').text('' + e.originalEvent.hwTimestamp)
+    $('body').append($('<div class="hi"/>').text('hello4!'))
+    $('body')[0].pointerdown = function (e) {
+        $('.hi').text('' + e.pressure)
         
-    })
+    }
 })
 
 </script>
