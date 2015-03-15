@@ -23,11 +23,11 @@ th, td {
 <script>
 
 $(function () {
-    $('body').append($('<div class="hi"/>').text('hello4!'))
-    $('body')[0].pointerdown = function (e) {
-        $('.hi').text('' + e.pressure)
+    $('body').append($('<div class="hi"/>').text('hello5!'))
+    $('body')[0].addEventListener("pointerdown", function (e) {
+        $('.hi').text('x: ' + e.pressure)
         
-    }
+    })
 })
 
 </script>
