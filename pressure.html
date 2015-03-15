@@ -24,7 +24,7 @@ th, td {
 
 $(function () {
     $('body').append($('<div class="hi"/>').text('hello2!')).mousedown(function (e) {
-        $('.hi').text('' + e.originalEvent.pressure)
+        $('.hi').text('' + e.originalEvent.hwTimestamp)
         
     })
 })
